@@ -1,0 +1,490 @@
+{
+  "updatedAt": "2026-10-18T18:35:23.691Z",
+  "createdAt": "2026-06-07T11:47:09.196Z",
+  "id": "UIJdGKDjN327vOY3",
+  "name": "[OK] GoogleSheet To Image & Mail notification",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Ark1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        112
+      ],
+      "id": "8382e25f-a102-485f-a780-2c3b84ce7a50",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "p0eBJDHneuDGbdBI",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keep": "lastItems"
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        112
+      ],
+      "id": "587cec4b-9d16-4872-bc21-1ae98755b20b",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "sendTo": "uraisolution.contact@gmail.com",
+        "subject": "=Invoice #{{ $('Limit').item.json['Invoice #'] }}",
+        "emailType": "text",
+        "message": "=Dear Customer,\n\nWe hope this email finds you well.\n\nThis is a friendly reminder that Invoice {{ $('Limit').item.json['Invoice #'] }} has been generated for your recent purchase from URAI Solutions. For your financial records, a high-resolution copy of your invoice has been attached directly to this email.\n\nINVOICE SUMMARY\n\nItem Description: {{ $('Limit').item.json.Description }}\nSubtotal: ${{ $('Limit').item.json.Subtotal }}\nTax (25%): ${{ $('Limit').item.json['Tax(25%)'] }}\nTotal Balance Due: ${{ $('Limit').item.json.Total }}\n\n\nKEY TIMELINES & STATUS\n\nIssue Date: {{ $('Limit').item.json.Date }}\nDue Date: {{ $('Limit').item.json.Due }}\nCurrent Status: {{ $('Limit').item.json.Status }}\n\nPlease ensure that payment is fully processed by {{ $('Limit').item.json.Due }} to keep your account in good standing. If you have already initiated this transfer feel free to disregard this notice.\n\nShould you encounter any issues or have questions regarding our accepted payment methods, simply reply directly to this thread and a member of our team will be happy to assist you.\n\nBest regards,\n\nBilling & Finance Team\nURAI Solutions",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "=data"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        16
+      ],
+      "id": "51bdc2e5-b69e-4aba-9a45-6ef77bb1aaf6",
+      "name": "Send a message1",
+      "webhookId": "3ac5e972-4158-49de-94b4-62af5012195a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Google uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoiceNumber = $('Limit').first().json['Invoice #'];\n\nfor (const item of $input.all()) {\n  item.binary.data.fileName = `invoice#${invoiceNumber}.png`;\n  item.binary.data.fileExtension = 'png';\n  item.binary.data.mimeType = 'image/png';\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        16
+      ],
+      "id": "790d73e4-26ae-4b3b-896e-6c6a723efc02",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst rawSvg = item.raw_svg;\nconst logoDataUri = item.logo_data_uri; \n\nconst htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    html, body { margin: 0; padding: 0; background-color: #ffffff; width: 800px; height: 1000px; overflow: hidden; position: relative; }\n    svg { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }\n    .logo-container { position: absolute; top: 45px; left: 50px; width: 50px; height: 50px; z-index: 10; }\n    .logo-container img { width: 100%; height: 100%; object-fit: contain; }\n  </style>\n</head>\n<body>\n  <div class=\"logo-container\">\n    <img src=\"${logoDataUri}\" />\n  </div>\n  ${rawSvg}\n</body>\n</html>\n`;\n\nreturn [{\n  json: {\n    html: htmlContent\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        256
+      ],
+      "id": "3c2fa5ca-c1eb-42c9-8e35-1d5f8f79510e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "content": "## .png",
+        "height": 224,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -48
+      ],
+      "id": "b46ac9cb-91d5-4b12-b37b-59137443de08",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## .pdf",
+        "height": 208,
+        "width": 848
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        208
+      ],
+      "id": "e5bebcb4-a234-4ebc-a6b5-d5cc6bd65dae",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "sendTo": "uraisolution.contact@gmail.com",
+        "subject": "=Invoice #{{ $('Limit').item.json[\"Invoice #\"] }}",
+        "emailType": "text",
+        "message": "=Dear Customer,\n\nWe hope this email finds you well.\n\nThis is a friendly reminder that Invoice {{ $('Limit').item.json['Invoice #'] }} has been generated for your recent purchase from URAI Solutions. For your financial records, a high-resolution copy of your invoice has been attached directly to this email.\n\nINVOICE SUMMARY\n\nItem Description: {{ $('Limit').item.json.Description }}\nSubtotal: ${{ $('Limit').item.json.Subtotal }}\nTax (25%): ${{ $('Limit').item.json['Tax(25%)'] }}\nTotal Balance Due: ${{ $('Limit').item.json.Total }}\n\n\nKEY TIMELINES & STATUS\n\nIssue Date: {{ $('Limit').item.json.Date }}\nDue Date: {{ $('Limit').item.json.Due }}\nCurrent Status: {{ $('Limit').item.json.Status }}\n\nPlease ensure that payment is fully processed by {{ $('Limit').item.json.Due }} to keep your account in good standing. If you have already initiated this transfer feel free to disregard this notice.\n\nShould you encounter any issues or have questions regarding our accepted payment methods, simply reply directly to this thread and a member of our team will be happy to assist you.\n\nBest regards,\n\nBilling & Finance Team\nURAI Solutions",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "=data"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        256
+      ],
+      "id": "36d6522e-566c-4b4d-8834-745b5321f3b9",
+      "name": "Send a message",
+      "webhookId": "3ac5e972-4158-49de-94b4-62af5012195a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Google uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.1.11:3000/pdf",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "3f6d9c1a8e2b4f7d5a0c9e1b6d4f2a7c9b1e3d6f4a8c2b5d7e0f1a3c6b9d2e4"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "html",
+              "value": "={{ $json.html }}"
+            },
+            {
+              "name": "options",
+              "value": "{   \"width\": \"800px\",   \"height\": \"1000px\",   \"printBackground\": true }"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        256
+      ],
+      "id": "319f282b-6faf-477a-844c-ffa6b8eb116d",
+      "name": "HTTP Request .pdf",
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.1.11:3000/screenshot",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "3f6d9c1a8e2b4f7d5a0c9e1b6d4f2a7c9b1e3d6f4a8c2b5d7e0f1a3c6b9d2e4"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  html: `<html>\n    <head>\n      <meta charset=\"UTF-8\">\n      <style>\n        html,body{\n          margin:0;\n          padding:0;\n          width:595px;\n          height:842px;\n          overflow:hidden;\n          background:#ffffff;\n        }\n        body > svg{\n          display:block;\n          width: 595px;\n          height:842px;\n        }\n      </style>\n    </head>\n    <body>${$json.raw_svg}</body>\n  </html>`,\n  bestAttempt: true,\n  options: {\n    type: 'png',\n    fullPage: false,\n    clip: {\n      x: 0,\n      y: 0,\n      width: 595,\n      height: 842\n    },\n    omitBackground: false\n  }\n}\n}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        16
+      ],
+      "id": "aa985177-b7e9-48ee-a6ed-59400e4b9728",
+      "name": "HTTP Request .png",
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. EXTRACT LOGO IMAGE BINARY (Modern n8n Filesystem Fix)\nconst binaryData = $input.first().binary?.logo_file;\n\nif (!binaryData) {\n  throw new Error(\"Strict Mode Error: Could not find a binary file named 'logo_file'.\");\n}\n\n// CRITICAL FIX: Extract the actual underlying file contents from the n8n disk storage\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer(0, 'logo_file');\nconst base64String = binaryBuffer.toString('base64');\n\nconst logoDataUri = `data:${binaryData.mimeType};base64,${base64String}`;\n\n// 2. FETCH GOOGLE SHEETS DATA\nconst inputData = $('Google Sheets Trigger').item.json;\n\nconst invoiceNo = inputData[\"Invoice #\"];\nconst vendor = inputData[\"Vendor\"] || \"URAI Solution\";\nconst description = inputData[\"Description\"];\nconst subtotal = inputData[\"Subtotal\"];\nconst tax = inputData[\"Tax(25%)\"];\nconst total = inputData[\"Total\"];\nconst status = (inputData[\"Status\"] || \"unpaid\").toLowerCase();\n\n// Helper function to convert Google Sheets serial days to YYYY-MM-DD\nfunction convertSerialToDate(serial) {\n  if (!serial || isNaN(serial)) return serial;\n  const epoch = new Date(1899, 11, 30);\n  const targetDate = new Date(epoch.getTime() + serial * 24 * 60 * 60 * 1000);\n  const yyyy = targetDate.getFullYear();\n  const mm = String(targetDate.getMonth() + 1).padStart(2, '0');\n  const dd = String(targetDate.getDate()).padStart(2, '0');\n  return `${yyyy}-${mm}-${dd}`;\n}\n\nconst issueDate = convertSerialToDate(inputData[\"Date\"]);\nconst dueDate = convertSerialToDate(inputData[\"Due\"]);\n\nlet badgeBg, badgeStroke, badgeText;\nif (status === \"paid\") {\n  badgeBg = \"#e6f4ea\"; badgeStroke = \"#34a853\"; badgeText = \"#137333\";\n} else {\n  badgeBg = \"#fce8e6\"; badgeStroke = \"#ea4335\"; badgeText = \"#c5221f\";\n}\n\n// 3. GENERATE DYNAMIC INVOICE SVG\nconst dynamicSvg = `<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 1000\" width=\"800\" height=\"1000\" style=\"background-color: #ffffff;\">\n   <style>\n     .title { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 32px; font-weight: bold; fill: #1e293b; }\n     .label { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }\n     .value { font-family: Arial, sans-serif; font-size: 14px; fill: #1e293b; font-weight: 500; }\n     .th { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; fill: #475569; }\n     .td { font-family: Arial, sans-serif; font-size: 14px; fill: #334155; }\n     .total-label { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #475569; }\n     .total-value { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #0f172a; }\n     .footer { font-family: Arial, sans-serif; font-size: 12px; fill: #94a3b8; text-anchor: middle; }\n     .divider { stroke: #e2e8f0; stroke-width: 1; }\n     .table-header-bg { fill: #f8fafc; }\n     .badge-bg { fill: ${badgeBg}; stroke: ${badgeStroke}; stroke-width: 1; }\n     .badge-text { font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; fill: ${badgeText}; text-transform: uppercase; letter-spacing: 1px; }\n   </style>\n\n   <g id=\"company-brand\" transform=\"translate(50, 45)\">\n     <text x=\"65\" y=\"34\" font-family=\"'Helvetica Neue', Arial, sans-serif\" font-size=\"24\" font-weight=\"bold\" fill=\"#0f172a\">${vendor}</text>\n   </g>\n\n   <g transform=\"translate(650, 45)\">\n     <rect width=\"100\" height=\"28\" rx=\"6\" class=\"badge-bg\"/>\n     <text x=\"50\" y=\"18\" class=\"badge-text\" text-anchor=\"middle\">${status}</text>\n   </g>\n\n   <text x=\"750\" y=\"120\" class=\"title\" text-anchor=\"end\">INVOICE</text>\n   \n   <text x=\"560\" y=\"155\" class=\"label\" text-anchor=\"start\">Invoice No:</text>\n   <text x=\"750\" y=\"155\" class=\"value\" text-anchor=\"end\">${invoiceNo}</text>\n      \n   <text x=\"560\" y=\"175\" class=\"label\" text-anchor=\"start\">Issue Date:</text>\n   <text x=\"750\" y=\"175\" class=\"value\" text-anchor=\"end\">${issueDate}</text>\n   \n   <text x=\"560\" y=\"195\" class=\"label\" text-anchor=\"start\">Due Date:</text>\n   <text x=\"750\" y=\"195\" class=\"value\" text-anchor=\"end\">${dueDate}</text>\n   \n   <line x1=\"50\" y1=\"220\" x2=\"750\" y2=\"220\" class=\"divider\" />\n\n   <rect x=\"50\" y=\"260\" width=\"700\" height=\"35\" class=\"table-header-bg\" rx=\"4\"/>\n   <text x=\"70\" y=\"282\" class=\"th\" text-anchor=\"start\">Line Item Description</text>\n   <text x=\"730\" y=\"282\" class=\"th\" text-anchor=\"end\">Amount</text>\n   <line x1=\"50\" y1=\"295\" x2=\"750\" y2=\"295\" class=\"divider\" />\n\n   <g id=\"item-row-1\" transform=\"translate(0, 325)\">\n     <text x=\"70\" y=\"0\" class=\"td\" text-anchor=\"start\" font-weight=\"bold\">${description}</text>\n     <text x=\"730\" y=\"0\" class=\"td\" text-anchor=\"end\" font-weight=\"bold\">$${subtotal}</text>\n     <line x1=\"50\" y1=\"20\" x2=\"750\" y2=\"20\" class=\"divider\" stroke-dasharray=\"4\"/>\n   </g>\n\n   <g transform=\"translate(0, 400)\">\n     <text x=\"600\" y=\"0\" class=\"total-label\" text-anchor=\"end\">Subtotal:</text>\n     <text x=\"730\" y=\"0\" class=\"value\" text-anchor=\"end\">$${subtotal}</text>\n     \n     <text x=\"600\" y=\"25\" class=\"total-label\" text-anchor=\"end\">Tax:</text>\n     <text x=\"730\" y=\"25\" class=\"value\" text-anchor=\"end\">$${tax}</text>\n     \n     <line x1=\"530\" y1=\"40\" x2=\"750\" y2=\"40\" class=\"divider\" />\n     \n     <text x=\"600\" y=\"65\" class=\"total-label\" text-anchor=\"end\" font-size=\"14\" fill=\"#0f172a\">Total Balance:</text>\n     <text x=\"730\" y=\"65\" class=\"total-value\" text-anchor=\"end\" font-size=\"20\" fill=\"#4f46e5\">$${total}</text>\n   </g>\n\n   <line x1=\"50\" y1=\"920\" x2=\"750\" y2=\"920\" class=\"divider\" />\n   <text x=\"400\" y=\"950\" class=\"footer\">Thank you for your business!</text>\n   <text x=\"400\" y=\"970\" class=\"footer\" font-size=\"10\">This document was automatically generated via secure financial workflows.</text>\n</svg>`;\n\nreturn {\n  raw_svg: dynamicSvg,\n  logo_data_uri: logoDataUri\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        112
+      ],
+      "id": "4a1bb64b-e5ab-4b42-96e5-e35dc0644486",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "url": "https://drive.usercontent.google.com/uc?id=1M2Vsxumup9RCfTSqHmtQMDbsqCXN-mJO&export=download",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "logo_file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        112
+      ],
+      "id": "10045cc3-36b2-4944-8ab2-c5673fc29c19",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoiceNumber = $('Limit').first().json['Invoice #'];\n\nfor (const item of $input.all()) {\n  item.binary.data.fileName = `invoice#${invoiceNumber}.pdf`;\n  item.binary.data.fileExtension = 'pdf';\n  item.binary.data.mimeType = 'application/pdf';\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        256
+      ],
+      "id": "9bbca7ab-96ef-4e9d-bdd1-b526267ee82f",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "content": "## Unpaid/paid Classify",
+        "height": 240,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        32
+      ],
+      "id": "3ec9ee98-e178-4856-b379-9c6716e64586",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "**Fetch logo img** ",
+        "height": 240,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        32
+      ],
+      "id": "91159379-c085-46ea-af59-07e60ccd196f",
+      "name": "Sticky Note3"
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request .pdf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request .pdf": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request .png": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "9949ca2f-a23d-44ca-bd3e-00a30e28c7da",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-07T11:47:09.215Z",
+      "createdAt": "2026-06-07T11:47:09.215Z",
+      "role": "workflow:owner",
+      "workflowId": "UIJdGKDjN327vOY3",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
