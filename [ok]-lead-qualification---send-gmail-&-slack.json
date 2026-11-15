@@ -1,0 +1,848 @@
+{
+  "updatedAt": "2026-06-29T07:50:57.587Z",
+  "createdAt": "2026-04-11T10:10:20.103Z",
+  "id": "ebpcrzD9XoVvzP6O",
+  "name": "[OK] Lead Qualification - Send Gmail & Slack",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        512
+      ],
+      "id": "b9a46acf-1292-4778-ac2e-a884e31dc391",
+      "name": "Wait",
+      "webhookId": "c4f58382-8450-481b-bd58-500d248d6ca4"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Google Sheets Trigger').item.json.Email }}",
+        "subject": "={{ $json.output.Subject }}",
+        "emailType": "text",
+        "message": "={{ $json.output.Body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        336
+      ],
+      "id": "003d7f2a-8cf1-4fa5-9db8-663f4018bbeb",
+      "name": "Send a message",
+      "webhookId": "b80a34d6-b2aa-42c1-abba-c1ead37bcaf2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Gmail account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**Part 1: Subject Line Generation**\nGenerate a professional, engaging email subject line for a lead who just inquired about our AI consulting services at uraisolution. The subject must start with \"uraisolution: \" followed by a brief, personalized description that references the service they are interested in. Do not use placeholders.\n\n**Part 2: Body and Tag Generation**\nAct as a customer service representative for uraisolution. Write a personalized email body addressed to {{ $json[\"First Name\"] }} based on their interest in {{ $json.Message }} and a budget of {{ $json.Budget }}. Thank them for their specific interest. Include a clear, professional call to action inviting the lead to book a discovery call using this specific booking link: [https://calendly.com/uraisolution-contact/indledende-mode](https://calendly.com/uraisolution-contact/indledende-mode). Do not use placeholders.\n\n**Part 3: Evaluation**\nEvaluate the lead based on these criteria to determine the \"Tag\":\n\n* **High-Value Lead:** Budget > $10,000, Premium/Consulting services, or Immediate timeline.\n* **Medium-Value Lead:** Budget $5,000–$10,000, Standard services, or Timeline within 1 month.\n* **Low-Value Lead:** Budget < $5,000, Basic/Introductory services, and/or Flexible timeline.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        512
+      ],
+      "id": "3203517f-0144-4db0-aa6f-56e3be3e92ed",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        416,
+        720
+      ],
+      "id": "7717df78-7a41-4860-980a-c322ac689535",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kzvMnsf7aw69V52P",
+          "name": "Google Gemini Perso-Marwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Subject\": {\n      \"type\": \"string\",\n      \"description\": \"The email subject line, starting with 'uraisolution: ' followed by a brief, personalized description.\"\n    },\n    \"Body\": {\n      \"type\": \"string\",\n      \"description\": \"The personalized email body from uraisolution Team, addressing the lead by their first name, thanking them for their specific interest, and including a call to action. Do not use placeholders. CRITICAL: You must use double newline characters (\\\\n\\\\n) to separate the greeting, the paragraphs, and the sign-off so it renders with clear line breaks.\"\n    },\n    \"Tag\": {\n      \"type\": \"string\",\n      \"enum\": [\"High-Value Lead\", \"Medium-Value Lead\", \"Low-Value Lead\"],\n      \"description\": \"The lead classification based on budget, service interest, and urgency.\"\n    }\n  },\n  \"required\": [\"Subject\", \"Body\", \"Tag\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        704
+      ],
+      "id": "9de41f8a-f0c2-4fb1-88a1-175ec96ffed3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo",
+          "mode": "list",
+          "cachedResultName": "Contact-form-website-uraisolution",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 457804441,
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit#gid=457804441"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Surname": "={{ $('Google Sheets Trigger').item.json.Surname }}",
+            "First Name": "={{ $('Google Sheets Trigger').item.json['First Name'] }}",
+            "Status": "={{ $('Google Sheets Trigger').item.json['First Name'] }} {{ $('Google Sheets Trigger').item.json.Surname }} was contacted by email on {{$now}}. The team hasa also been notified via Slack.",
+            "Tag": "={{ $json.output.Tag }}",
+            "Email": "={{ $('Google Sheets Trigger').item.json.Email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Surname",
+              "displayName": "Surname",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        512
+      ],
+      "id": "1c28354f-41af-4214-9e7b-01b5fb9ef2f6",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QlVkhdM3NA1MOvJc",
+          "name": "Google Sheets account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09G7EY9SD9",
+          "mode": "list",
+          "cachedResultName": "leads"
+        },
+        "text": "=New {{ $json.output.Tag }} Alert!\n\nName: {{ $('Google Sheets Trigger').item.json['First Name'] }} {{ $('Google Sheets Trigger').item.json.Surname }}\nInterest: {{ $('Google Sheets Trigger').item.json.Message }}\nBudget: {{ $('Google Sheets Trigger').item.json.Budget }}\n\nCheck the lead in Google Sheets for more details!\n\nhttps://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit?usp=sharing",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        880,
+        704
+      ],
+      "id": "6119bc3d-070f-4267-9500-06389f5f462f",
+      "name": "Send a message1",
+      "webhookId": "8dff9e37-947a-499d-8586-0d78f2e59ce2",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "xEnPstvdcOT9mV8X",
+          "name": "Slack account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo",
+          "mode": "list",
+          "cachedResultName": "Contact-form-website-uraisolution",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 457804441,
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit#gid=457804441"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        512
+      ],
+      "id": "d328d916-8f26-45a2-a0e6-f0080b0a9930",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "MxsbhuFoUSALFx7b",
+          "name": "Google Sheets Trigger account uraisolution"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Google Sheets Trigger": {
+      "documentId": "1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo",
+      "sheetId": 457804441,
+      "lastRevision": 71,
+      "lastRevisionLink": "https://docs.google.com/spreadsheets/export?id=1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo&revision=71&exportFormat=xlsx"
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "8b89fed8-a42b-4d75-8370-513ad0d77d9b",
+  "activeVersionId": "895aa820-0074-4a7f-95c2-9c144e8693c7",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-11T10:10:20.148Z",
+      "createdAt": "2026-04-11T10:10:20.148Z",
+      "role": "workflow:owner",
+      "workflowId": "ebpcrzD9XoVvzP6O",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-06-14T11:57:53.000Z",
+    "createdAt": "2026-06-05T22:17:43.460Z",
+    "versionId": "895aa820-0074-4a7f-95c2-9c144e8693c7",
+    "workflowId": "ebpcrzD9XoVvzP6O",
+    "nodes": [
+      {
+        "parameters": {
+          "amount": 1
+        },
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          176,
+          512
+        ],
+        "id": "b9a46acf-1292-4778-ac2e-a884e31dc391",
+        "name": "Wait",
+        "webhookId": "c4f58382-8450-481b-bd58-500d248d6ca4"
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $('Google Sheets Trigger').item.json.Email }}",
+          "subject": "={{ $json.output.Subject }}",
+          "emailType": "text",
+          "message": "={{ $json.output.Body }}",
+          "options": {
+            "appendAttribution": false
+          }
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          336
+        ],
+        "id": "003d7f2a-8cf1-4fa5-9db8-663f4018bbeb",
+        "name": "Send a message",
+        "webhookId": "b80a34d6-b2aa-42c1-abba-c1ead37bcaf2",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dHb55EobTekTxpGI",
+            "name": "Gmail account uraisolution"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Part 1: Subject Line Generation\n\nGenerate a professional, engaging email subject line for a lead who just inquired about our AI consulting services at uraisolution. The subject must start with \"uraisolution: \" followed by a brief, personalized description that references the service they are interested in. Do not use placeholders.\n\nPart 2: Body and Tag Generation\n\n**Prompt:**\n\nAct as a customer service representative for uraisolution. Write a personalized email body addressed to {{ $json[\"First Name\"] }} based on their interest in {{ $json.Message }} and a budget of {{ $json.Budget }}. Thank them for their specific interest and include a call to action regarding a discovery call. Do not use placeholders.\n\nPart 3: Additionally, evaluate the lead based on these criteria to determine the \"Tag\":\n> * **High-Value Lead:** Budget > $10,000, Premium/Consulting services, or Immediate timeline.\n\n> * **Medium-Value Lead:** Budget $5,000–$10,000, Standard services, or Timeline within 1 month.\n\n> * **Low-Value Lead:** Budget < $5,000, Basic/Introductory services, and/or Flexible timeline.",
+          "hasOutputParser": true,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          416,
+          512
+        ],
+        "id": "3203517f-0144-4db0-aa6f-56e3be3e92ed",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          336,
+          720
+        ],
+        "id": "7717df78-7a41-4860-980a-c322ac689535",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "kzvMnsf7aw69V52P",
+            "name": "Google Gemini Perso-Marwan"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "schemaType": "manual",
+          "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Subject\": {\n      \"type\": \"string\",\n      \"description\": \"The email subject line, starting with 'uraisolution: ' followed by a brief, personalized description.\"\n    },\n    \"Body\": {\n      \"type\": \"string\",\n      \"description\": \"The personalized email body from uraisolution Team, addressing the lead by their first name, thanking them for their specific interest, and including a call to action. Do not use placeholders. CRITICAL: You must use double newline characters (\\\\n\\\\n) to separate the greeting, the paragraphs, and the sign-off so it renders with clear line breaks.\"\n    },\n    \"Tag\": {\n      \"type\": \"string\",\n      \"enum\": [\"High-Value Lead\", \"Medium-Value Lead\", \"Low-Value Lead\"],\n      \"description\": \"The lead classification based on budget, service interest, and urgency.\"\n    }\n  },\n  \"required\": [\"Subject\", \"Body\", \"Tag\"]\n}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          592,
+          720
+        ],
+        "id": "9de41f8a-f0c2-4fb1-88a1-175ec96ffed3",
+        "name": "Structured Output Parser"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "documentId": {
+            "__rl": true,
+            "value": "1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo",
+            "mode": "list",
+            "cachedResultName": "Contact-form-website-uraisolution",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 457804441,
+            "mode": "list",
+            "cachedResultName": "Contacts",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit#gid=457804441"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Surname": "={{ $('Google Sheets Trigger').item.json.Surname }}",
+              "First Name": "={{ $('Google Sheets Trigger').item.json['First Name'] }}",
+              "Status": "={{ $('Google Sheets Trigger').item.json['First Name'] }} {{ $('Google Sheets Trigger').item.json.Surname }} was contacted by email on {{$now}}. The team hasa also been notified via Slack.",
+              "Tag": "={{ $json.output.Tag }}",
+              "Email": "={{ $('Google Sheets Trigger').item.json.Email }}"
+            },
+            "matchingColumns": [
+              "Email"
+            ],
+            "schema": [
+              {
+                "id": "Timestamp",
+                "displayName": "Timestamp",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "First Name",
+                "displayName": "First Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Surname",
+                "displayName": "Surname",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Email",
+                "displayName": "Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Phone",
+                "displayName": "Phone",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Company",
+                "displayName": "Company",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Budget",
+                "displayName": "Budget",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Message",
+                "displayName": "Message",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Tag",
+                "displayName": "Tag",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "row_number",
+                "displayName": "row_number",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "canBeUsedToMatch": true,
+                "readOnly": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          880,
+          512
+        ],
+        "id": "1c28354f-41af-4214-9e7b-01b5fb9ef2f6",
+        "name": "Update row in sheet",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "QlVkhdM3NA1MOvJc",
+            "name": "Google Sheets account uraisolution"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "authentication": "oAuth2",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "value": "C09G7EY9SD9",
+            "mode": "list",
+            "cachedResultName": "leads"
+          },
+          "text": "=New {{ $json.output.Tag }} Alert!\n\nName: {{ $('Google Sheets Trigger').item.json['First Name'] }} {{ $('Google Sheets Trigger').item.json.Surname }}\nInterest: {{ $('Google Sheets Trigger').item.json.Message }}\nBudget: {{ $('Google Sheets Trigger').item.json.Budget }}\n\nCheck the lead in Google Sheets for more details!\n\nhttps://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit?usp=sharing",
+          "otherOptions": {
+            "includeLinkToWorkflow": false
+          }
+        },
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          880,
+          704
+        ],
+        "id": "6119bc3d-070f-4267-9500-06389f5f462f",
+        "name": "Send a message1",
+        "webhookId": "8dff9e37-947a-499d-8586-0d78f2e59ce2",
+        "credentials": {
+          "slackOAuth2Api": {
+            "id": "xEnPstvdcOT9mV8X",
+            "name": "Slack account uraisolution"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "everyMinute"
+              }
+            ]
+          },
+          "documentId": {
+            "__rl": true,
+            "value": "1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo",
+            "mode": "list",
+            "cachedResultName": "Contact-form-website-uraisolution",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 457804441,
+            "mode": "list",
+            "cachedResultName": "Contacts",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_ID7b6NdF70NDfV7ytKgOoqEqgZHBcCJ0HAhoFrHfWo/edit#gid=457804441"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheetsTrigger",
+        "typeVersion": 1,
+        "position": [
+          -80,
+          512
+        ],
+        "id": "d328d916-8f26-45a2-a0e6-f0080b0a9930",
+        "name": "Google Sheets Trigger",
+        "credentials": {
+          "googleSheetsTriggerOAuth2Api": {
+            "id": "MxsbhuFoUSALFx7b",
+            "name": "Google Sheets Trigger account uraisolution"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Wait": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Send a message",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Update row in sheet",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send a message1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Sheets Trigger": {
+        "main": [
+          [
+            {
+              "node": "Wait",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "uraisolution contact",
+    "name": "Version - 6/14/2026",
+    "description": "",
+    "autosaved": true
+  },
+  "tags": [
+    {
+      "updatedAt": "2026-06-02T04:21:50.712Z",
+      "createdAt": "2026-06-02T04:21:50.712Z",
+      "id": "KPNq7nUKC1wb74Kc",
+      "name": "slack"
+    },
+    {
+      "updatedAt": "2026-06-02T04:21:43.068Z",
+      "createdAt": "2026-06-02T04:21:43.068Z",
+      "id": "QSl9RaMZT7eUZEWq",
+      "name": "gmail"
+    },
+    {
+      "updatedAt": "2026-06-02T04:21:01.660Z",
+      "createdAt": "2026-06-02T04:21:01.660Z",
+      "id": "VQQQff7DmqLhkdOs",
+      "name": "agent"
+    },
+    {
+      "updatedAt": "2026-06-02T04:21:34.195Z",
+      "createdAt": "2026-06-02T04:21:34.195Z",
+      "id": "oga329s9YfGl3oWO",
+      "name": "lead"
+    }
+  ]
+}
