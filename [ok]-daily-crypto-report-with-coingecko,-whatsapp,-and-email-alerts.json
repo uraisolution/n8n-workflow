@@ -1,0 +1,750 @@
+{
+  "updatedAt": "2026-11-15T14:38:21.116Z",
+  "createdAt": "2026-06-14T19:33:02.332Z",
+  "id": "6jNRz5J6AqoJZLD1",
+  "name": "[OK] Daily crypto report with CoinGecko, WhatsApp, and email alerts",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 8
+            }
+          ]
+        }
+      },
+      "id": "d4575dcd-57c9-4ade-9746-be644aba5443",
+      "name": "Daily Crypto Trigger\t",
+      "type": "n8n-nodes-base.cron",
+      "position": [
+        336,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "symbols-assignment",
+              "name": "vs_currency",
+              "type": "string",
+              "value": "usd"
+            },
+            {
+              "id": "whatsapp-number",
+              "name": "whatsapp_number",
+              "type": "string",
+              "value": "+33660639538"
+            },
+            {
+              "id": "email-recipient",
+              "name": "email_recipient",
+              "type": "string",
+              "value": "uraisolution.contact@gmail.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "39d4dd2e-6ec8-4970-b5b1-8e9c896529ef",
+      "name": "Set Configuration Variables\t",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        592,
+        480
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency={{ $json.vs_currency }}&order=market_cap_desc&per_page=100&page=1&sparkline=false&locale=en&price_change_percentage=24h",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "eef4d478-03bd-438b-88c9-83244dd4e1d0",
+      "name": "Fetch Crypto Data from CoinGecko\t",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        816,
+        480
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process crypto data and calculate movements\nlet processedStocks = [];\n\n// Log the raw input for debugging\nconsole.log('Raw API Input:', JSON.stringify($input.all(), null, 2));\n\n// Aggregate data from all input items\n$input.all().forEach(item => {\n  const stockData = item.json;\n  if (stockData && stockData.name && stockData.price_change_percentage_24h !== undefined) {\n    const percentChange = parseFloat(stockData.price_change_percentage_24h);\n    const price = parseFloat(stockData.current_price);\n    const change = parseFloat(stockData.price_change_24h);\n    \n    processedStocks.push({\n      name: stockData.name,\n      symbol: stockData.symbol.toUpperCase(),\n      price: isNaN(price) ? null : price,\n      change: isNaN(change) ? null : change,\n      percent_change: isNaN(percentChange) ? null : percentChange,\n      volume: stockData.total_volume ? parseInt(stockData.total_volume) : null,\n      high: stockData.high_24h ? parseFloat(stockData.high_24h) : null,\n      low: stockData.low_24h ? parseFloat(stockData.low_24h) : null,\n      movement_type: percentChange > 0 ? 'gain' : 'loss',\n      abs_percent_change: Math.abs(percentChange)\n    });\n  }\n});\n\n// Log processed stocks for debugging\nconsole.log('Processed Stocks:', JSON.stringify(processedStocks, null, 2));\n\n// Sort by absolute percentage change (biggest movers)\nprocessedStocks.sort((a, b) => b.abs_percent_change - a.abs_percent_change);\n\n// Take top 100 biggest movers, gainers, and losers\nconst topMovers = processedStocks.slice(0, 100);\nconst gainers = processedStocks.filter(stock => stock.percent_change > 0).slice(0, 100);\nconst losers = processedStocks.filter(stock => stock.percent_change < 0).slice(0, 100);\n\n// FIXED: Dynamically fetch today's date in IST format\nconst currentDate = new Date().toLocaleString('en-IN', {\n  timeZone: 'Asia/Kolkata', // Safely forces execution to follow IST timezone boundaries\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\nreturn [{\n  json: {\n    date: currentDate, // Reflects the live dynamic execution date\n    total_stocks: processedStocks.length,\n    top_gainers: gainers,\n    top_losers: losers,\n    biggest_movers: topMovers\n  }\n}];"
+      },
+      "id": "29507472-9f45-4854-a25c-e0cb35136fa9",
+      "name": "Process Crypto Movements\t",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1040,
+        480
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate HTML Email content\nconst data = $input.first().json;\n\nlet htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }\n        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n        .header { text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 15px; margin-bottom: 20px; }\n        .section { margin-bottom: 30px; }\n        .stock-table { width: 100%; border-collapse: collapse; margin-top: 10px; }\n        .stock-table th, .stock-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n        .stock-table th { background-color: #f8f9fa; font-weight: bold; }\n        .gain { color: #28a745; font-weight: bold; }\n        .loss { color: #dc3545; font-weight: bold; }\n        .symbol { font-weight: bold; color: #007bff; }\n        \n        /* FIXED STATS CONTAINER FOR EMAIL CLIENTS */\n        .stats { \n            display: flex; \n            width: 100%;\n            background: #f8f9fa; \n            padding: 15px 0; \n            border-radius: 5px; \n            margin-bottom: 20px; \n        }\n        .stat-item { \n            flex: 1; \n            width: 33.33%;\n            text-align: center; \n            padding: 0 10px;\n        }\n        .stat-number { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 5px; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>📈 Daily Crypto Market Report</h1>\n            <p><strong>Date:</strong> ${data.date}</p>\n        </div>\n        \n        <div class=\"stats\">\n            <div class=\"stat-item\">\n                <div class=\"stat-number\">${data.total_stocks}</div>\n                <div style=\"color: #555; font-size: 14px;\">Cryptos Analyzed</div>\n            </div>\n            <div class=\"stat-item\">\n                <div class=\"stat-number\">${data.top_gainers.length}</div>\n                <div style=\"color: #555; font-size: 14px;\">Top Gainers</div>\n            </div>\n            <div class=\"stat-item\">\n                <div class=\"stat-number\">${data.top_losers.length}</div>\n                <div style=\"color: #555; font-size: 14px;\">Top Losers</div>\n            </div>\n        </div>\n\n        <div class=\"section\">\n            <h2 style=\"color: #28a745; margin-bottom: 10px;\">🟢 Top Gainers</h2>\n            <table class=\"stock-table\">\n                <thead>\n                    <tr>\n                        <th>Rank</th>\n                        <th>Symbol</th>\n                        <th>Price</th>\n                        <th>Change</th>\n                        <th>% Change</th>\n                        <th>Volume</th>\n                    </tr>\n                </thead>\n                <tbody>`;\n\ndata.top_gainers.forEach((stock, index) => {\n    htmlContent += `\n                    <tr>\n                        <td>${index + 1}</td>\n                        <td class=\"symbol\">${stock.symbol}</td>\n                        <td>$${stock.price?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"gain\">+$${stock.change?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"gain\">+${stock.percent_change?.toFixed(2)}%</td>\n                        <td>${stock.volume?.toLocaleString() || 'N/A'}</td>\n                    </tr>`;\n});\n\nhtmlContent += `\n                </tbody>\n            </table>\n        </div>\n\n        <div class=\"section\">\n            <h2 style=\"color: #dc3545; margin-bottom: 10px;\">🔴 Top Losers</h2>\n            <table class=\"stock-table\">\n                <thead>\n                    <tr>\n                        <th>Rank</th>\n                        <th>Symbol</th>\n                        <th>Price</th>\n                        <th>Change</th>\n                        <th>% Change</th>\n                        <th>Volume</th>\n                    </tr>\n                </thead>\n                <tbody>`;\n\ndata.top_losers.forEach((stock, index) => {\n    htmlContent += `\n                    <tr>\n                        <td>${index + 1}</td>\n                        <td class=\"symbol\">${stock.symbol}</td>\n                        <td>$${stock.price?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"loss\">$${stock.change?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"loss\">${stock.percent_change?.toFixed(2)}%</td>\n                        <td>${stock.volume?.toLocaleString() || 'N/A'}</td>\n                    </tr>`;\n});\n\nhtmlContent += `\n                </tbody>\n            </table>\n        </div>\n        \n        <div style=\"text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666;\">\n            <p>⚡ Generated automatically by Crypto Alert System</p>\n            <p><small>Data provided by CoinGecko API</small></p>\n        </div>\n    </div>\n</body>\n</html>`;\n\nconst plainText = `DAILY CRYPTO MARKET REPORT\n====================================\nDate: ${data.date}\n\n[MARKET METRICS]\n- Cryptos Analyzed : ${data.total_stocks}\n- Top Gainers      : ${data.top_gainers.length}\n- Top Losers       : ${data.top_losers.length}\n\n[TOP GAINERS]\n${data.top_gainers.map((stock, i) => `${i+1}. ${stock.symbol}: $${stock.price?.toFixed(2)} (+${stock.percent_change?.toFixed(2)}%)`).join('\\n')}\n\n[TOP LOSERS]\n${data.top_losers.map((stock, i) => `${i+1}. ${stock.symbol}: $${stock.price?.toFixed(2)} (${stock.percent_change?.toFixed(2)}%)`).join('\\n')}\n\n====================================\nGenerated by Crypto Alert System`;\n\nreturn [{\n    json: {\n        email_html: htmlContent,\n        email_text: plainText,\n        email_subject: `📈 Daily Crypto Report - ${data.date} | Top Movers Alert`\n    }\n}];"
+      },
+      "id": "337719ad-85c1-49bc-8bf9-b578f8718211",
+      "name": "Format Email Content\t",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1328,
+        320
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "content": "Triggers daily",
+        "height": 232,
+        "width": 180
+      },
+      "id": "7c7f1532-ef42-4537-b9c6-5fa1834dd832",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        288,
+        416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Configure phone numbers, and email addresses here",
+        "height": 264,
+        "width": 180,
+        "color": 4
+      },
+      "id": "60622a0b-df55-46f3-8da7-961be1d89e61",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        544,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Fetches 24h data for top 100 cryptos using CoinGecko API",
+        "height": 280,
+        "width": 196,
+        "color": 3
+      },
+      "id": "1a47e027-c1d2-47aa-8083-b6a8dc033b09",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        768,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Processes and ranks cryptos by biggest 24h movements",
+        "height": 232,
+        "width": 180,
+        "color": 5
+      },
+      "id": "45c9aadb-c889-4aff-bffa-8a3940d1815d",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        992,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=+33660639538",
+        "recipientPhoneNumber": "={{ $('Set Configuration Variables\t').item.json.whatsapp_number }}",
+        "textBody": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "id": "bd9244db-2652-491e-9437-7b497098ee04",
+      "name": "Send message",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        1600,
+        512
+      ],
+      "webhookId": "d5c8ef9f-32a8-4655-8baf-e91f60b81fe2",
+      "typeVersion": 1,
+      "credentials": {
+        "whatsAppApi": {
+          "id": "MaE7mhz5aGMJEcgM",
+          "name": "WhatsApp account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Set Configuration Variables\t').item.json.email_recipient }}",
+        "subject": "={{ $json.email_subject }}",
+        "message": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        320
+      ],
+      "id": "089f380c-c303-48c9-8c28-57912f0cdafe",
+      "name": "Send a message",
+      "webhookId": "f93ade22-9813-4614-8386-cb4556723ac7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Google uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5918390004",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        704
+      ],
+      "id": "6f33a378-a739-42b3-a1f9-e4b3e9377ea5",
+      "name": "Send a text message",
+      "webhookId": "d6b63e01-0ff8-4611-94d8-c6612c9e6ac8",
+      "credentials": {
+        "telegramApi": {
+          "id": "ujQ4741BdotCA13k",
+          "name": "Telegram account MarwanStation_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate message\n const data = $input.first().json;\n\nlet message = `📈 *DAILY CRYPTO MARKET REPORT*\\n`;\nmessage += `📅 Date: ${data.date}\\n`;\nmessage += `📊 Analyzed: ${data.total_stocks} cryptos\\n\\n`;\n\n// Top Gainers\nmessage += `🟢 *TOP GAINERS*\\n`;\nmessage += `━━━━━━━━━━━━━━━━━━━━\\n`;\ndata.top_gainers.forEach((stock, index) => {\n  message += `${index + 1}. ${stock.symbol}\\n`;\n  message += `   💰 $${stock.price?.toFixed(2) || 'N/A'}\\n`;\n  message += `   📈 +${stock.percent_change?.toFixed(2)}% (+$${stock.change?.toFixed(2)})\\n\\n`;\n});\n\n// Top Losers\nmessage += `🔴 *TOP LOSERS*\\n`;\nmessage += `━━━━━━━━━━━━━━━━━━━━\\n`;\ndata.top_losers.forEach((stock, index) => {\n  message += `${index + 1}. ${stock.symbol}\\n`;\n  message += `   💰 $${stock.price?.toFixed(2) || 'N/A'}\\n`;\n  message += `   📉 ${stock.percent_change?.toFixed(2)}% ($${stock.change?.toFixed(2)})\\n\\n`;\n});\n\nmessage += `\\n⚡ Generated by Crypto Alert Bot`;\n\nreturn [{ json: { message: message } }];"
+      },
+      "id": "65d484f2-0da1-4fba-86b3-eef7d8c59bb4",
+      "name": "Format Social Media Message",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1328,
+        592
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC3385M60",
+          "mode": "list",
+          "cachedResultName": "financial-market"
+        },
+        "text": "={{ $json.message }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1600,
+        896
+      ],
+      "id": "4022d2c1-6673-48c9-966e-2a7e88a5d6a5",
+      "name": "Send a message1",
+      "webhookId": "a448ee9a-10da-4bd0-b144-059ef4bcc116",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "xEnPstvdcOT9mV8X",
+          "name": "Slack uraisolution"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Crypto Trigger\t": {
+      "main": [
+        [
+          {
+            "node": "Set Configuration Variables\t",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Content\t": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Crypto Movements\t": {
+      "main": [
+        [
+          {
+            "node": "Format Email Content\t",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Configuration Variables\t": {
+      "main": [
+        [
+          {
+            "node": "Fetch Crypto Data from CoinGecko\t",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Crypto Data from CoinGecko\t": {
+      "main": [
+        [
+          {
+            "node": "Process Crypto Movements\t",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Social Media Message": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateId": "7729",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c1e2dd47-6012-44f7-b8b2-c6eeea024759",
+  "activeVersionId": "1faab2e9-e1c6-4234-a1e7-7caccae89757",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-14T19:33:02.343Z",
+      "createdAt": "2026-06-14T19:33:02.343Z",
+      "role": "workflow:owner",
+      "workflowId": "6jNRz5J6AqoJZLD1",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-06-21T12:02:12.000Z",
+    "createdAt": "2026-06-20T14:23:32.583Z",
+    "versionId": "1faab2e9-e1c6-4234-a1e7-7caccae89757",
+    "workflowId": "6jNRz5J6AqoJZLD1",
+    "nodes": [
+      {
+        "parameters": {
+          "triggerTimes": {
+            "item": [
+              {
+                "hour": 8
+              }
+            ]
+          }
+        },
+        "id": "d4575dcd-57c9-4ade-9746-be644aba5443",
+        "name": "Daily Crypto Trigger\t",
+        "type": "n8n-nodes-base.cron",
+        "position": [
+          336,
+          480
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "symbols-assignment",
+                "name": "vs_currency",
+                "type": "string",
+                "value": "usd"
+              },
+              {
+                "id": "whatsapp-number",
+                "name": "whatsapp_number",
+                "type": "string",
+                "value": "+33660639538"
+              },
+              {
+                "id": "email-recipient",
+                "name": "email_recipient",
+                "type": "string",
+                "value": "uraisolution.contact@gmail.com"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "39d4dd2e-6ec8-4970-b5b1-8e9c896529ef",
+        "name": "Set Configuration Variables\t",
+        "type": "n8n-nodes-base.set",
+        "position": [
+          592,
+          480
+        ],
+        "typeVersion": 3.4
+      },
+      {
+        "parameters": {
+          "url": "=https://api.coingecko.com/api/v3/coins/markets?vs_currency={{ $json.vs_currency }}&order=market_cap_desc&per_page=100&page=1&sparkline=false&locale=en&price_change_percentage=24h",
+          "options": {
+            "timeout": 30000
+          }
+        },
+        "id": "eef4d478-03bd-438b-88c9-83244dd4e1d0",
+        "name": "Fetch Crypto Data from CoinGecko\t",
+        "type": "n8n-nodes-base.httpRequest",
+        "position": [
+          816,
+          480
+        ],
+        "typeVersion": 4.2
+      },
+      {
+        "parameters": {
+          "jsCode": "// Process crypto data and calculate movements\nlet processedStocks = [];\n\n// Log the raw input for debugging\nconsole.log('Raw API Input:', JSON.stringify($input.all(), null, 2));\n\n// Aggregate data from all input items\n$input.all().forEach(item => {\n  const stockData = item.json;\n  if (stockData && stockData.name && stockData.price_change_percentage_24h !== undefined) {\n    const percentChange = parseFloat(stockData.price_change_percentage_24h);\n    const price = parseFloat(stockData.current_price);\n    const change = parseFloat(stockData.price_change_24h);\n    \n    processedStocks.push({\n      name: stockData.name,\n      symbol: stockData.symbol.toUpperCase(),\n      price: isNaN(price) ? null : price,\n      change: isNaN(change) ? null : change,\n      percent_change: isNaN(percentChange) ? null : percentChange,\n      volume: stockData.total_volume ? parseInt(stockData.total_volume) : null,\n      high: stockData.high_24h ? parseFloat(stockData.high_24h) : null,\n      low: stockData.low_24h ? parseFloat(stockData.low_24h) : null,\n      movement_type: percentChange > 0 ? 'gain' : 'loss',\n      abs_percent_change: Math.abs(percentChange)\n    });\n  }\n});\n\n// Log processed stocks for debugging\nconsole.log('Processed Stocks:', JSON.stringify(processedStocks, null, 2));\n\n// Sort by absolute percentage change (biggest movers)\nprocessedStocks.sort((a, b) => b.abs_percent_change - a.abs_percent_change);\n\n// Take top 100 biggest movers, gainers, and losers\nconst topMovers = processedStocks.slice(0, 100);\nconst gainers = processedStocks.filter(stock => stock.percent_change > 0).slice(0, 100);\nconst losers = processedStocks.filter(stock => stock.percent_change < 0).slice(0, 100);\n\n// FIXED: Dynamically fetch today's date in IST format\nconst currentDate = new Date().toLocaleString('en-IN', {\n  timeZone: 'Asia/Kolkata', // Safely forces execution to follow IST timezone boundaries\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\nreturn [{\n  json: {\n    date: currentDate, // Reflects the live dynamic execution date\n    total_stocks: processedStocks.length,\n    top_gainers: gainers,\n    top_losers: losers,\n    biggest_movers: topMovers\n  }\n}];"
+        },
+        "id": "29507472-9f45-4854-a25c-e0cb35136fa9",
+        "name": "Process Crypto Movements\t",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          1040,
+          480
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "jsCode": "// Generate HTML Email content\nconst data = $input.first().json;\n\nlet htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }\n        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n        .header { text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 15px; margin-bottom: 20px; }\n        .section { margin-bottom: 30px; }\n        .stock-table { width: 100%; border-collapse: collapse; margin-top: 10px; }\n        .stock-table th, .stock-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n        .stock-table th { background-color: #f8f9fa; font-weight: bold; }\n        .gain { color: #28a745; font-weight: bold; }\n        .loss { color: #dc3545; font-weight: bold; }\n        .symbol { font-weight: bold; color: #007bff; }\n        \n        /* FIXED STATS CONTAINER FOR EMAIL CLIENTS */\n        .stats { \n            display: flex; \n            width: 100%;\n            background: #f8f9fa; \n            padding: 15px 0; \n            border-radius: 5px; \n            margin-bottom: 20px; \n        }\n        .stat-item { \n            flex: 1; \n            width: 33.33%;\n            text-align: center; \n            padding: 0 10px;\n        }\n        .stat-number { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 5px; }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>📈 Daily Crypto Market Report</h1>\n            <p><strong>Date:</strong> ${data.date}</p>\n        </div>\n        \n        <div class=\"stats\">\n            <div class=\"stat-item\">\n                <div class=\"stat-number\">${data.total_stocks}</div>\n                <div style=\"color: #555; font-size: 14px;\">Cryptos Analyzed</div>\n            </div>\n            <div class=\"stat-item\">\n                <div class=\"stat-number\">${data.top_gainers.length}</div>\n                <div style=\"color: #555; font-size: 14px;\">Top Gainers</div>\n            </div>\n            <div class=\"stat-item\">\n                <div class=\"stat-number\">${data.top_losers.length}</div>\n                <div style=\"color: #555; font-size: 14px;\">Top Losers</div>\n            </div>\n        </div>\n\n        <div class=\"section\">\n            <h2 style=\"color: #28a745; margin-bottom: 10px;\">🟢 Top Gainers</h2>\n            <table class=\"stock-table\">\n                <thead>\n                    <tr>\n                        <th>Rank</th>\n                        <th>Symbol</th>\n                        <th>Price</th>\n                        <th>Change</th>\n                        <th>% Change</th>\n                        <th>Volume</th>\n                    </tr>\n                </thead>\n                <tbody>`;\n\ndata.top_gainers.forEach((stock, index) => {\n    htmlContent += `\n                    <tr>\n                        <td>${index + 1}</td>\n                        <td class=\"symbol\">${stock.symbol}</td>\n                        <td>$${stock.price?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"gain\">+$${stock.change?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"gain\">+${stock.percent_change?.toFixed(2)}%</td>\n                        <td>${stock.volume?.toLocaleString() || 'N/A'}</td>\n                    </tr>`;\n});\n\nhtmlContent += `\n                </tbody>\n            </table>\n        </div>\n\n        <div class=\"section\">\n            <h2 style=\"color: #dc3545; margin-bottom: 10px;\">🔴 Top Losers</h2>\n            <table class=\"stock-table\">\n                <thead>\n                    <tr>\n                        <th>Rank</th>\n                        <th>Symbol</th>\n                        <th>Price</th>\n                        <th>Change</th>\n                        <th>% Change</th>\n                        <th>Volume</th>\n                    </tr>\n                </thead>\n                <tbody>`;\n\ndata.top_losers.forEach((stock, index) => {\n    htmlContent += `\n                    <tr>\n                        <td>${index + 1}</td>\n                        <td class=\"symbol\">${stock.symbol}</td>\n                        <td>$${stock.price?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"loss\">$${stock.change?.toFixed(2) || 'N/A'}</td>\n                        <td class=\"loss\">${stock.percent_change?.toFixed(2)}%</td>\n                        <td>${stock.volume?.toLocaleString() || 'N/A'}</td>\n                    </tr>`;\n});\n\nhtmlContent += `\n                </tbody>\n            </table>\n        </div>\n        \n        <div style=\"text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666;\">\n            <p>⚡ Generated automatically by Crypto Alert System</p>\n            <p><small>Data provided by CoinGecko API</small></p>\n        </div>\n    </div>\n</body>\n</html>`;\n\nconst plainText = `DAILY CRYPTO MARKET REPORT\n====================================\nDate: ${data.date}\n\n[MARKET METRICS]\n- Cryptos Analyzed : ${data.total_stocks}\n- Top Gainers      : ${data.top_gainers.length}\n- Top Losers       : ${data.top_losers.length}\n\n[TOP GAINERS]\n${data.top_gainers.map((stock, i) => `${i+1}. ${stock.symbol}: $${stock.price?.toFixed(2)} (+${stock.percent_change?.toFixed(2)}%)`).join('\\n')}\n\n[TOP LOSERS]\n${data.top_losers.map((stock, i) => `${i+1}. ${stock.symbol}: $${stock.price?.toFixed(2)} (${stock.percent_change?.toFixed(2)}%)`).join('\\n')}\n\n====================================\nGenerated by Crypto Alert System`;\n\nreturn [{\n    json: {\n        email_html: htmlContent,\n        email_text: plainText,\n        email_subject: `📈 Daily Crypto Report - ${data.date} | Top Movers Alert`\n    }\n}];"
+        },
+        "id": "337719ad-85c1-49bc-8bf9-b578f8718211",
+        "name": "Format Email Content\t",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          1328,
+          320
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "content": "Triggers daily",
+          "height": 232,
+          "width": 180
+        },
+        "id": "7c7f1532-ef42-4537-b9c6-5fa1834dd832",
+        "name": "Sticky Note",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          288,
+          416
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "content": "Configure phone numbers, and email addresses here",
+          "height": 264,
+          "width": 180,
+          "color": 4
+        },
+        "id": "60622a0b-df55-46f3-8da7-961be1d89e61",
+        "name": "Sticky Note1",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          544,
+          400
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "content": "Fetches 24h data for top 100 cryptos using CoinGecko API",
+          "height": 280,
+          "width": 196,
+          "color": 3
+        },
+        "id": "1a47e027-c1d2-47aa-8083-b6a8dc033b09",
+        "name": "Sticky Note2",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          768,
+          400
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "content": "Processes and ranks cryptos by biggest 24h movements",
+          "height": 232,
+          "width": 180,
+          "color": 5
+        },
+        "id": "45c9aadb-c889-4aff-bffa-8a3940d1815d",
+        "name": "Sticky Note3",
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          992,
+          400
+        ],
+        "typeVersion": 1
+      },
+      {
+        "parameters": {
+          "operation": "send",
+          "phoneNumberId": "=+33660639538",
+          "recipientPhoneNumber": "={{ $('Set Configuration Variables\t').item.json.whatsapp_number }}",
+          "textBody": "={{ $json.message }}",
+          "additionalFields": {}
+        },
+        "id": "bd9244db-2652-491e-9437-7b497098ee04",
+        "name": "Send message",
+        "type": "n8n-nodes-base.whatsApp",
+        "position": [
+          1600,
+          512
+        ],
+        "webhookId": "d5c8ef9f-32a8-4655-8baf-e91f60b81fe2",
+        "typeVersion": 1,
+        "credentials": {
+          "whatsAppApi": {
+            "id": "MaE7mhz5aGMJEcgM",
+            "name": "WhatsApp account uraisolution"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $('Set Configuration Variables\t').item.json.email_recipient }}",
+          "subject": "={{ $json.email_subject }}",
+          "message": "={{ $json.email_html }}",
+          "options": {
+            "appendAttribution": false
+          }
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1584,
+          320
+        ],
+        "id": "089f380c-c303-48c9-8c28-57912f0cdafe",
+        "name": "Send a message",
+        "webhookId": "f93ade22-9813-4614-8386-cb4556723ac7",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dHb55EobTekTxpGI",
+            "name": "Gmail account uraisolution"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "chatId": "5918390004",
+          "text": "={{ $json.message }}",
+          "additionalFields": {
+            "appendAttribution": false
+          }
+        },
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          1600,
+          704
+        ],
+        "id": "6f33a378-a739-42b3-a1f9-e4b3e9377ea5",
+        "name": "Send a text message",
+        "webhookId": "d6b63e01-0ff8-4611-94d8-c6612c9e6ac8",
+        "credentials": {
+          "telegramApi": {
+            "id": "ujQ4741BdotCA13k",
+            "name": "Telegram account uraisolution"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Generate message\n const data = $input.first().json;\n\nlet message = `📈 *DAILY CRYPTO MARKET REPORT*\\n`;\nmessage += `📅 Date: ${data.date}\\n`;\nmessage += `📊 Analyzed: ${data.total_stocks} cryptos\\n\\n`;\n\n// Top Gainers\nmessage += `🟢 *TOP GAINERS*\\n`;\nmessage += `━━━━━━━━━━━━━━━━━━━━\\n`;\ndata.top_gainers.forEach((stock, index) => {\n  message += `${index + 1}. ${stock.symbol}\\n`;\n  message += `   💰 $${stock.price?.toFixed(2) || 'N/A'}\\n`;\n  message += `   📈 +${stock.percent_change?.toFixed(2)}% (+$${stock.change?.toFixed(2)})\\n\\n`;\n});\n\n// Top Losers\nmessage += `🔴 *TOP LOSERS*\\n`;\nmessage += `━━━━━━━━━━━━━━━━━━━━\\n`;\ndata.top_losers.forEach((stock, index) => {\n  message += `${index + 1}. ${stock.symbol}\\n`;\n  message += `   💰 $${stock.price?.toFixed(2) || 'N/A'}\\n`;\n  message += `   📉 ${stock.percent_change?.toFixed(2)}% ($${stock.change?.toFixed(2)})\\n\\n`;\n});\n\nmessage += `\\n⚡ Generated by Crypto Alert Bot`;\n\nreturn [{ json: { message: message } }];"
+        },
+        "id": "65d484f2-0da1-4fba-86b3-eef7d8c59bb4",
+        "name": "Format Social Media Message",
+        "type": "n8n-nodes-base.code",
+        "position": [
+          1328,
+          592
+        ],
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "authentication": "oAuth2",
+          "select": "channel",
+          "channelId": {
+            "__rl": true,
+            "value": "C0BC3385M60",
+            "mode": "list",
+            "cachedResultName": "financial-market"
+          },
+          "text": "={{ $json.message }}",
+          "otherOptions": {}
+        },
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.4,
+        "position": [
+          1600,
+          896
+        ],
+        "id": "4022d2c1-6673-48c9-966e-2a7e88a5d6a5",
+        "name": "Send a message1",
+        "webhookId": "a448ee9a-10da-4bd0-b144-059ef4bcc116",
+        "credentials": {
+          "slackOAuth2Api": {
+            "id": "xEnPstvdcOT9mV8X",
+            "name": "Slack account uraisolution"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Daily Crypto Trigger\t": {
+        "main": [
+          [
+            {
+              "node": "Set Configuration Variables\t",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Email Content\t": {
+        "main": [
+          [
+            {
+              "node": "Send a message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process Crypto Movements\t": {
+        "main": [
+          [
+            {
+              "node": "Format Email Content\t",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Configuration Variables\t": {
+        "main": [
+          [
+            {
+              "node": "Fetch Crypto Data from CoinGecko\t",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Crypto Data from CoinGecko\t": {
+        "main": [
+          [
+            {
+              "node": "Process Crypto Movements\t",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Social Media Message": {
+        "main": [
+          [
+            {
+              "node": "Send message",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send a text message",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send a message1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "uraisolution contact",
+    "name": "Version",
+    "description": "",
+    "autosaved": true
+  },
+  "tags": []
+}
