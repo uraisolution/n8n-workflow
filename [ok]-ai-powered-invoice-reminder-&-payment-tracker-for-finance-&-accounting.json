@@ -1,0 +1,998 @@
+{
+  "updatedAt": "2026-10-11T11:40:24.669Z",
+  "createdAt": "2026-07-05T13:34:29.334Z",
+  "id": "ozEGFJnRBwCyftFa",
+  "name": "[OK] AI-Powered Invoice Reminder & Payment Tracker for Finance & Accounting",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Unpaid"
+            },
+            {
+              "id": "2a54d7aa-9e17-4eb4-8e76-228cf1957751",
+              "leftValue": "={{ $json['Days overdue'] }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "05fd7db4-b81f-4ab7-9325-4b2b9aa4f6f7",
+      "name": "Filter Overdue Invoices",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        432,
+        208
+      ],
+      "notesInFlow": true,
+      "typeVersion": 2,
+      "retryOnFail": false,
+      "notes": "Separate overdue from upcoming"
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoices = $input.all();\nconst today = new Date();\nconst results = [];\n\nfor (const invoice of invoices) {\n  const data = invoice.json;\n\n  // 1. Hent datafelter direkte fra dit input-schema\n  const rawDueDate = data['Due'];\n  const rawIssueDate = data['Date'];\n  const rawLastReminder = data['Last reminder sent'];\n  \n  // Brug den præcise værdi fra regnearket som fallback, hvis den findes\n  let daysOverdue = parseInt(data['Days overdue'], 10);\n\n  const dueDate = rawDueDate ? new Date(rawDueDate) : null;\n  \n  // Hvis regnearket ikke har værdien, beregner vi den her\n  if (isNaN(daysOverdue) && dueDate && !isNaN(dueDate.getTime())) {\n    daysOverdue = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));\n  }\n\n  // 2. Gardering: Hvis der hverken er en forfaldsdato eller dage over tid, springes rækken over\n  if (isNaN(daysOverdue) && (!dueDate || isNaN(dueDate.getTime()))) {\n    continue; \n  }\n\n  // 3. Beregn dage siden sidste påmindelse\n  const lastReminder = (rawLastReminder && String(rawLastReminder).trim() !== '') \n    ? new Date(rawLastReminder) \n    : null;\n\n  let daysSinceReminder = 999;\n  if (lastReminder && !isNaN(lastReminder.getTime())) {\n    daysSinceReminder = Math.floor((today - lastReminder) / (1000 * 60 * 60 * 24));\n  }\n\n  // 4. Bestem påmindelsestype ud fra intervaller (rettet til at bruge >= så ingen dage tabes)\n  let reminderType = '';\n  let urgencyLevel = '';\n  let shouldSendReminder = false;\n\n  if (daysOverdue >= 30 && daysSinceReminder >= 3) {\n    reminderType = 'final_notice';\n    urgencyLevel = 'critical';\n    shouldSendReminder = true;\n  } else if (daysOverdue >= 14 && daysSinceReminder >= 5) {\n    reminderType = 'second_reminder';\n    urgencyLevel = 'high';\n    shouldSendReminder = true;\n  } else if (daysOverdue > 0 && daysSinceReminder >= 7) {\n    reminderType = 'first_reminder';\n    urgencyLevel = 'medium';\n    shouldSendReminder = true;\n  } else if (daysOverdue === 0) {\n    reminderType = 'due_today';\n    urgencyLevel = 'medium';\n    shouldSendReminder = true;\n  } else if (daysOverdue < 0 && daysOverdue >= -3 && !lastReminder) {\n    reminderType = 'upcoming_reminder';\n    urgencyLevel = 'low';\n    shouldSendReminder = true;\n  }\n\n  // 5. Output resultatet hvis betingelserne er mødt\n  if (shouldSendReminder) {\n    results.push({\n      json: {\n        ...data,\n        daysOverdue,\n        daysSinceReminder,\n        reminderType,\n        urgencyLevel,\n        shouldSendReminder\n      }\n    });\n  }\n}\n\nreturn results;"
+      },
+      "id": "e058aff6-07bb-44cd-b364-b76e8097cddc",
+      "name": "Calculate Reminder Logic",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        656,
+        208
+      ],
+      "notesInFlow": true,
+      "typeVersion": 2,
+      "notes": "Smart logic for reminder timing"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ai-prompt",
+              "name": "aiPrompt",
+              "type": "string",
+              "value": "=Generate a professional and friendly payment reminder email for the following invoice:\n\nClient Name: {{ $json.Vendor }}\nInvoice Number: {{ $json['Invoice #'] }}\nAmount: {{ $json.Total }}\nIssue Date: {{ $json.Date }}\nDue Date: {{ $json.Due }}\nDays Overdue: {{ $json.daysOverdue }}\nDescription: {{ $json.Description }}\n\nThe email should:\n- Be courteous and professional\n- Clearly state the outstanding amount and invoice details\n- Mention the due date and overdue status if applicable\n- Include a polite call-to-action for payment\n- Provide payment instructions or link\n- Be appropriately urgent based on the reminder type\n- End with a professional signature by including URAI Solution (our company)\n\nFormat the response as a complete email with subject line. Do not put the subject line in the e-mail response only in the subject line of the e-mail. Include the Invoice ID {{ $json['Invoice #'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1e64c1da-39fd-4ce7-a293-d759397d474b",
+      "name": "Prepare AI Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        880,
+        208
+      ],
+      "typeVersion": 3.4,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // 1. Safe AI input capture\n  let aiResponse = data.output || '';\n  if (typeof aiResponse !== 'string') {\n    aiResponse = String(aiResponse);\n  }\n\n  // Convert literal \"\\n\" text strings to real line breaks\n  aiResponse = aiResponse.replace(/\\\\n/g, '\\n');\n\n  // 2. Extract and strip out Subject\n  const subjectMatch = aiResponse.match(/Subject:\\s*(.+?)(?:\\n|$)/i);\n  \n  // --- UPDATED FALLBACK TO USE INVOCIE ID ---\n  const invoiceId = data['Invocie ID'] || data['Invoice number'] || 'N/A';\n  const subject = subjectMatch ? subjectMatch[1].trim() : `Payment Reminder - Invoice ID ${invoiceId}`;\n  \n  let mainBody = aiResponse.replace(/Subject:\\s*.+?(?:\\n|$)/i, '').trim();\n  if (!mainBody) { mainBody = aiResponse; }\n\n  // 3. Clean up greeting formatting dynamically based on your Sheet input\n  const clientName = data['Client name'] || 'Customer';\n  const greetingRegex = new RegExp(`Dear\\\\s+${clientName},?`, 'i');\n  mainBody = mainBody.replace(greetingRegex, `Dear ${clientName},`);\n\n  // 4. Extract target data table variables safely\n  const invoiceNum = data['Invoice number'] || 'N/A';\n  const currency = data['Currency'] || '';\n  const amount = data['Invoice amount'] || '0.00';\n  const dueDate = data['Due date'] || 'N/A';\n  const daysOverdue = parseInt(data['Days overdue'] || data.daysOverdue, 10);\n\n  let statusText = 'Due Soon';\n  let statusColor = '#f57c00';\n  if (!isNaN(daysOverdue) && daysOverdue > 0) {\n    statusText = `Overdue by ${daysOverdue} days`;\n    statusColor = '#d32f2f';\n  }\n\n  // Build the clean HTML Table block\n  const invoiceTable = `\n  <div style=\"background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; max-width: 500px;\">\n    <h3 style=\"color: #333; margin-top: 0; font-family: Arial, sans-serif;\">Invoice Details</h3>\n    <table style=\"width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;\">\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Invoice Number:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333;\">${invoiceNum}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Invoice ID:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333;\">${invoiceId}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Amount:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333; font-weight: bold;\">${currency} ${amount}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Due Date:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333;\">${dueDate}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Status:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: ${statusColor}; font-weight: bold;\">${statusText}</td>\n      </tr>\n    </table>\n  </div>\n  `;\n\n  // 5. REMOVE THE EXAMPLE LINES AND PLACEHOLDERS COMPLETELY\n  mainBody = mainBody\n    .replace(/\\[Insert your preferred payment instructions[\\s\\S]*?\\]/gi, '') // Strips bracket text\n    .replace(/^.*\\*Example:.*$/gm, '')                                       // Strips any line containing *Example:*\n    .replace(/\\n\\s*\\n\\s*\\n/g, '\\n\\n')                                        // Cleans up trailing blank space lines\n    .trim();\n\n  // 6. Split body up around the table insertion spot dynamically\n  let introduction = `Dear ${clientName},`;\n  let contentText = mainBody;\n\n  if (mainBody.toLowerCase().startsWith(`dear ${clientName.toLowerCase()},`)) {\n    contentText = mainBody.substring(`dear ${clientName},`.length).trim();\n  }\n\n  // Convert text paragraphs to HTML breaks safely\n  let formattedContent = contentText\n    .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')\n    .replace(/\\n/g, '<br>');\n\n  // Isolate sections dynamically to drop table in perfectly after instructions intro paragraph\n  const splitPoints = formattedContent.split('<br><br>');\n  const topSection = splitPoints.slice(0, 3).join('<br><br>');\n  const bottomSection = splitPoints.slice(3).join('<br><br>');\n\n  // 7. Assemble Final Email Layout\n  const htmlBody = `\n  <html>\n    <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\">\n      <p style=\"margin-bottom: 20px;\">${introduction}</p>\n      <div>${topSection}</div>\n      ${invoiceTable}\n      <div>${bottomSection}</div>\n      <div style=\"margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;\">\n        <p>This is an automated reminder. If you have already made this payment, please disregard this email.</p>\n      </div>\n    </body>\n  </html>\n  `;\n  \n  results.push({\n    json: {\n      ...data,\n      emailSubject: subject,\n      emailBody: htmlBody,\n      emailBodyPlain: mainBody.replace(/<[^>]*>/g, '')\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "1a57c446-dd27-41b4-b12b-8cfa53adef5a",
+      "name": "Format Email",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1456,
+        208
+      ],
+      "notesInFlow": true,
+      "typeVersion": 2,
+      "notes": "Format email with HTML styling"
+    },
+    {
+      "parameters": {
+        "content": "Starts the workflow automatically each morning.",
+        "height": 288,
+        "width": 192
+      },
+      "id": "061c77c3-aaf7-4135-b6c2-a1b5fb8d6a72",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Decides when and how to send reminders.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "272a14ac-552b-4e8a-9792-011ebcb1d3fa",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        608,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Keeps only overdue invoices.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "404a30fa-5a0f-4576-97d4-61f760704428",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        384,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Creates a personalized AI prompt for each client.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "4d6afad4-68ec-4c5c-b468-f255462e8dd2",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        832,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Marks reminder as sent in the database.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "d5f17f26-caa7-44d0-af4e-4e7ccdf9db8a",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1856,
+        -16
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Sends the email via Gmail\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "36177855-d013-4bdb-ba53-64fff8f3e336",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1632,
+        -16
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Converts AI text to a professional HTML email.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "72af1173-9bfb-4821-95eb-6124ba1838bf",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1408,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Uses AI to draft reminder emails.\n",
+        "height": 288,
+        "width": 272
+      },
+      "id": "97d506cd-aac6-4531-a21e-3ed81f06d90f",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1088,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Captures payment notifications.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "660c643f-c497-46d5-8999-6675378003e2",
+      "name": "Sticky Note14",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -48,
+        640
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Updates invoice as “paid.”\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "26484b28-c08f-46af-a973-59a9aebe6124",
+      "name": "Sticky Note15",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        272,
+        656
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Sends payment receipt to client.",
+        "height": 288,
+        "width": 192
+      },
+      "id": "a2465f5d-35ef-4800-9360-b67c97a015b0",
+      "name": "Sticky Note16",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        624,
+        640
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Ark1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        208
+      ],
+      "id": "2b3132e1-a490-4440-a980-8145b0a0ec06",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QlVkhdM3NA1MOvJc",
+          "name": "Google Sheets account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Take the {{ $json.aiPrompt }} from the incoming input data and use it to generate the professional payment reminder email",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1104,
+        208
+      ],
+      "id": "5ffc1ecf-2eac-4dc5-8313-e689978fc9b5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get row(s) in sheet').item.json['E-mail'] }}\n",
+        "subject": "={{ $('Format Email').item.json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBodyPlain }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        112
+      ],
+      "id": "ae7a8841-e49f-4aca-96fc-d9e9e71cfc24",
+      "name": "Send a message",
+      "webhookId": "13c1da6d-b7e9-4d0f-b1df-c4facc6079b1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Google uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Ark1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Last reminder sent": "={{ $now.format('yyyy-MM-dd') }}",
+            "Notification": "={{ $json.labelIds[0] }}",
+            "Invoice #": "={{ $('Calculate Reminder Logic').item.json['Invoice #'] }}"
+          },
+          "matchingColumns": [
+            "Invoice #"
+          ],
+          "schema": [
+            {
+              "id": "Invoice #",
+              "displayName": "Invoice #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vendor",
+              "displayName": "Vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Due",
+              "displayName": "Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tax(25%)",
+              "displayName": "Tax(25%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Days overdue",
+              "displayName": "Days overdue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last reminder sent",
+              "displayName": "Last reminder sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Notification",
+              "displayName": "Notification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "E-mail",
+              "displayName": "E-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1904,
+        112
+      ],
+      "id": "fb2ba6df-7294-4af8-9c6b-a3a1a478c01f",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QlVkhdM3NA1MOvJc",
+          "name": "Google Sheets account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        208
+      ],
+      "id": "66072277-0549-4369-b9dc-ab471c600666",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BF8CHBN0J",
+          "mode": "list",
+          "cachedResultName": "invoice-reminder"
+        },
+        "text": "=Follow up on the {{ $('Calculate Reminder Logic').item.json.Status }} Invoice ID {{ $('Calculate Reminder Logic').item.json['Invoice #'] }} by {{ $('Calculate Reminder Logic').item.json.Vendor }}. The client is {{ $('Calculate Reminder Logic').item.json.daysOverdue }} days overdue and had a due date on {{ $('Calculate Reminder Logic').item.json.Due }}. The last reminder was sent on {{ $('Get row(s) in sheet').item.json['Last reminder sent'] }}\n\nDaily Invoice Reminder Report - {{ $now.toFormat('yyyy-MM-dd') }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1680,
+        400
+      ],
+      "id": "b3dee327-cd0c-4ff1-b482-d47619703796",
+      "name": "Send a message to URAI Solution team",
+      "webhookId": "dac64f83-bf04-4329-8268-05ba4de2d306",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "xEnPstvdcOT9mV8X",
+          "name": "Slack uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        464
+      ],
+      "id": "80c0c78e-e16d-40ce-9640-250c77bf20c0",
+      "name": "Google Gemini Chat",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J0LJs0Sg7eEhKhtb",
+          "name": "Google Gemini(PaLM) Perso-Tarek"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Ark1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UB9HE0spA_RZAekm_Saf_KmGzGNebUphad6RGzwResw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice #": "={{ $json['Invoice #'] }}",
+            "Status": "Paid"
+          },
+          "matchingColumns": [
+            "Invoice #"
+          ],
+          "schema": [
+            {
+              "id": "Invoice #",
+              "displayName": "Invoice #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vendor",
+              "displayName": "Vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Due",
+              "displayName": "Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tax(25%)",
+              "displayName": "Tax(25%)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Days overdue",
+              "displayName": "Days overdue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last reminder sent",
+              "displayName": "Last reminder sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Notification",
+              "displayName": "Notification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "E-mail",
+              "displayName": "E-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        736
+      ],
+      "id": "c8a3f2f2-06af-43d1-b531-0f23bec74a88",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QlVkhdM3NA1MOvJc",
+          "name": "Google Sheets account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "=Payment Confirmation - Invoice {{ $json.invoice_number }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        736
+      ],
+      "id": "666600dd-6814-4ee8-8d1e-860f930d0699",
+      "name": "Send a message1",
+      "webhookId": "e936ed9a-ca68-4959-b15f-da5edcd432fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Google uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "events": [
+          "invoice_payment.paid"
+        ]
+      },
+      "type": "n8n-nodes-base.stripeTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        736
+      ],
+      "id": "24bc7458-535f-4549-8ecc-772f28cfb031",
+      "name": "Stripe Trigger",
+      "webhookId": "9d884216-2753-4e7e-bcaf-71c02a3ab148",
+      "credentials": {
+        "stripeApi": {
+          "id": "gz0pBYYJPCUYKStj",
+          "name": "Stripe account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Format Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message to URAI Solution team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Overdue Invoices": {
+      "main": [
+        [
+          {
+            "node": "Calculate Reminder Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Reminder Logic": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Overdue Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stripe Trigger": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Copenhagen",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "7a4db5cd-7a96-44f6-84a6-32b3b66f7acd",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-07-05T13:34:29.345Z",
+      "createdAt": "2026-07-05T13:34:29.345Z",
+      "role": "workflow:owner",
+      "workflowId": "ozEGFJnRBwCyftFa",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
