@@ -1,0 +1,33 @@
+{
+  "updatedAt": "2026-11-15T14:08:57.000Z",
+  "createdAt": "2026-11-15T12:45:40.026Z",
+  "id": "gkQqTliO0UziCw8W",
+  "name": "Commodity Trend Logger with Monthly Pattern Insights (Sheets + AI)",
+  "active": false,
+  "isArchived": true,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "a73bc3a2-48bc-4fa4-8e40-e1cf944e6d3b",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-11-15T12:45:40.107Z",
+      "createdAt": "2026-11-15T12:45:40.107Z",
+      "role": "workflow:owner",
+      "workflowId": "gkQqTliO0UziCw8W",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
