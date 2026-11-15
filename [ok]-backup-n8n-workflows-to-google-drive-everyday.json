@@ -1,0 +1,317 @@
+{
+  "updatedAt": "2026-06-29T07:55:08.062Z",
+  "createdAt": "2026-06-14T13:55:58.948Z",
+  "id": "gTP0BrFkIWL8t0M1",
+  "name": "[OK] Backup n8n workflows to Google Drive everyday",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "62edf095-a02a-4b8d-a7b1-e194ae0d3652",
+      "name": "On clicking 'execute'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        368,
+        240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "filters": {},
+        "requestOptions": {}
+      },
+      "id": "1e10875b-f54b-43a8-a7a2-43d4fcbf248d",
+      "name": "n8n",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        736,
+        368
+      ],
+      "retryOnFail": true,
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1f5caabb-d76b-4744-be76-97e9abea1ddc",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        928,
+        368
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "=Workflow Backups {{ $now.format('cccc t dd-MM-yyyy') }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1EKT6aaFUB8T_xJNlNQ-ZBOsWgoctV7sj",
+          "mode": "list",
+          "cachedResultName": "Workflow Backups",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1EKT6aaFUB8T_xJNlNQ-ZBOsWgoctV7sj"
+        },
+        "options": {}
+      },
+      "id": "755e0803-c5c0-48a7-9c0c-44f8d5718d0b",
+      "name": "create new folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        560,
+        368
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "v5wYDfOknxIqqHFt",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {
+          "format": true,
+          "fileName": "={{ $json.name + \".json\" }} "
+        }
+      },
+      "id": "22874532-6d87-4a72-bb51-dd8c6e03c0c1",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        1168,
+        384
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Loop Over Items').item.json.name + \".json\" }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('create new folder').item.json.id }}"
+        },
+        "options": {}
+      },
+      "id": "0b0155f1-15bc-4580-af6e-7dec3b0d5737",
+      "name": "Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1424,
+        384
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "v5wYDfOknxIqqHFt",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "id": "c7b73036-1831-4dd6-8dd9-fef1356a184c",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        368,
+        512
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "sendTo": "=uraisolution.contact@gmail.com",
+        "subject": "=N8N Workflow Backup {{ $('Schedule Trigger').item.json['Readable date'] }}",
+        "emailType": "text",
+        "message": "=Dear {{ $json.owners[0].displayName }},\n\nThe n8n workflows have been backed up in your google drive successfully.\n\nBest Regards,\nURAI SOLUTION",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        192
+      ],
+      "id": "36e2d4cb-696b-4adc-9206-cee9033ded25",
+      "name": "Send a message",
+      "webhookId": "5e89fb5a-babd-412c-91be-281f8a17694f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Gmail account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        192
+      ],
+      "id": "372ee49c-cd31-43eb-8eb3-ec4d02c9c3dd",
+      "name": "Limit"
+    }
+  ],
+  "connections": {
+    "n8n": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "create new folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create new folder": {
+      "main": [
+        [
+          {
+            "node": "n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On clicking 'execute'": {
+      "main": [
+        [
+          {
+            "node": "create new folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Paris",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "templateId": "2886",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "0700db4c-4a90-4f13-8d7b-37a736ae19a6",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-14T13:55:58.956Z",
+      "createdAt": "2026-06-14T13:55:58.956Z",
+      "role": "workflow:owner",
+      "workflowId": "gTP0BrFkIWL8t0M1",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
