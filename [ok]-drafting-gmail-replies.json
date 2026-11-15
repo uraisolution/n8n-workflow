@@ -1,0 +1,456 @@
+{
+  "updatedAt": "2026-06-29T07:52:28.958Z",
+  "createdAt": "2026-06-14T12:10:41.007Z",
+  "id": "HCFHbvPzkRWvLPlU",
+  "name": "[OK] Drafting Gmail replies",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7cd25be4-203c-49e7-872d-26dc583eaf38",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        848,
+        384
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {},
+      "id": "1276c2df-15c8-4004-841d-3e01c0f77ccf",
+      "name": "Replace Me",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        2704,
+        368
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "2f466934-e257-4315-8a7f-5e3dde987430",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.labelIds[2] }}",
+              "rightValue": "={{ $json.labelIds[2] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e080f05c-87fa-429b-87da-7fac76a21f90",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1344,
+        400
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {},
+      "id": "d720e4eb-5db5-4408-9342-62032799fd79",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        1568,
+        288
+      ],
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 20,
+        "simple": false,
+        "filters": {
+          "readStatus": "both"
+        },
+        "options": {}
+      },
+      "id": "4f33e557-99e5-4a6c-9800-46c2d50ca399",
+      "name": "Gmail - Get All Messages",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        320,
+        384
+      ],
+      "webhookId": "8cea66a8-11e5-4439-8a37-7e71fea82ce5",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Gmail account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {}
+      },
+      "id": "93c4e336-70ce-4eb0-a3d9-9025b5dcc3d5",
+      "name": "Gmail - Single Message",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1120,
+        384
+      ],
+      "webhookId": "20410acb-f11b-47cf-86fd-390446dd9bd9",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Gmail account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "f680cff7-56f5-4c44-ac1c-f89920336c0a",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        64,
+        384
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e246278-eccb-4cd5-8c93-7daa824066e3",
+              "name": "id",
+              "type": "string",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "id": "06e5dde5-dfce-4d4d-859d-b364301cb5aa",
+              "name": "from",
+              "type": "string",
+              "value": "={{ $json.headers.from }}"
+            },
+            {
+              "id": "e10231b9-fbb1-447a-a3fc-3ba8e5a9d314",
+              "name": "headers.subject",
+              "type": "string",
+              "value": "={{ $json.headers.subject }}"
+            },
+            {
+              "id": "6a472d41-0f6e-4803-8d94-4b4f8272e66c",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a8137901-21e2-4af1-8252-ad31aade9cc3",
+      "name": "Extract Email Data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1744,
+        272
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "const excludedLabelIds = [\n  \"Label_5\",   // Newsletter\n  \"Label_21\",  // Inquiry\n  \"Label_11\",  // Invoice\n  \"Label_9\",   // Proposal\n  \"Label_52\",  // Action Required\n  \"Label_55\",  // Follow-up Reminder\n  \"Label_53\",  // Task\n  \"Label_44\",  // Personal\n  \"Label_54\",  // Urgent\n  \"Label_12\",  // Bank\n  \"Label_3\",   // Job Update\n  \"Label_42\",  // Spam / Junk\n  \"Label_7\",   // Social / Networking\n  \"Label_8\",   // Receipt\n  \"Label_2\",   // Event Invite\n  \"Label_10\",  // Subscription Renewal\n  \"Label_4\"    // System Notification\n];\n\n\nreturn items.filter(item => {\n  const labels = item.json.labelIds || [];\n  // Exclude if ANY excluded label is present\n  return !labels.some(label => excludedLabelIds.includes(label));\n});\n"
+      },
+      "id": "b5ed8bda-65fe-47e6-83f2-c1a6fe086564",
+      "name": "Filter Emails Without Excluded Labels",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        544,
+        384
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the email details:\nFrom: { $('Merge').item.json.headers.from }}\nSubject line: {{ $json.headers.subject }}\nEmail Body: \n{{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert executive assistant specialized in drafting professional email replies. Your sole task is to generate a polished draft response to the incoming email.\n\n## CONTEXT\nYou are replying on behalf of the \"uraisolution Team\".\n\n## DRAFT WRITING RULES\n1. Tone: Maintain a highly professional, welcoming, and executive tone. \n2. Content Focus: \n   - Express enthusiasm for the substantial partnership.\n   - Propose moving forward with scheduling the discovery call.\n3. Structure:\n   - Professional greeting (e.g., \"Dear [Sender Name] or Client Team,\")\n   - Clear, direct appreciation and confirmation of next steps.\n   - Provide placeholders like [Insert Date 1] or a call-to-action link for scheduling.\n   - Professional closing (e.g., \"Best regards,<br>uraisolution Team\")\n\n## FORMATTING RULES\n- You must preserve the email thread context by outputting the correct subject line.\n- The generated draft message MUST use standard HTML line breaks (`<br>`) or paragraph tags (`<p>`) for spacing so it looks like a real, readable email layout.\n- Do not include any markdown styling (like `**bold**` or `*italics*`) inside the draft message.\n- Fill in the required JSON keys exactly as requested by the parser."
+        }
+      },
+      "id": "15d37950-cfc9-47e2-8982-7c4e5306737a",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2048,
+        240
+      ],
+      "typeVersion": 1.7,
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.output.subject }}",
+        "message": "={{ $json.output.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2416,
+        272
+      ],
+      "id": "6716e92e-3e70-49ad-8f1c-5555d93c9efe",
+      "name": "Create a draft",
+      "webhookId": "7a7d926b-32f1-42e2-bd32-efd0e5122574",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Gmail account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {
+          "format": "json"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        416
+      ],
+      "id": "c6057c19-a0c2-44d0-84bb-264750e85781",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "nlE0znqpIDuW42KZ",
+          "name": "Ollama account PC:foxmarwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subject\": {\n      \"type\": \"string\",\n      \"description\": \"The generated subject line for the email response.\"\n    },\n    \"message\": {\n      \"type\": \"string\",\n      \"description\": \"The main body content of the email message.\"\n    }\n  },\n  \"required\": [\n    \"subject\",\n    \"message\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2224,
+        400
+      ],
+      "id": "35bfe76a-cfb2-45b5-8b8e-a1d5e3c68a08",
+      "name": "Structured Output Parser1"
+    }
+  ],
+  "connections": {
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Gmail - Single Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Get All Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Single Message": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Get All Messages": {
+      "main": [
+        [
+          {
+            "node": "Filter Emails Without Excluded Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Emails Without Excluded Labels": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "0f11f45a-c228-4c02-9098-f9ab956ef2b5",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-14T12:10:41.113Z",
+      "createdAt": "2026-06-14T12:10:41.113Z",
+      "role": "workflow:owner",
+      "workflowId": "HCFHbvPzkRWvLPlU",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
