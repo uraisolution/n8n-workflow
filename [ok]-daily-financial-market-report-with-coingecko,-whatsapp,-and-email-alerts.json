@@ -1,0 +1,336 @@
+{
+  "updatedAt": "2026-11-15T14:45:38.516Z",
+  "createdAt": "2026-11-15T14:09:24.065Z",
+  "id": "uIUPFm9CB7BqPmFN",
+  "name": "[OK] Daily financial market report with CoinGecko, WhatsApp, and email alerts",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 8
+            }
+          ]
+        }
+      },
+      "id": "745c5b35-8004-4637-905c-40a89d021c88",
+      "name": "Daily Crypto Trigger\t",
+      "type": "n8n-nodes-base.cron",
+      "position": [
+        336,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "symbols-assignment",
+              "name": "vs_currency",
+              "type": "string",
+              "value": "usd"
+            },
+            {
+              "id": "whatsapp-number",
+              "name": "whatsapp_number",
+              "type": "string",
+              "value": "+33660639538"
+            },
+            {
+              "id": "email-recipient",
+              "name": "email_recipient",
+              "type": "string",
+              "value": "uraisolution.contact@gmail.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "532c706a-02d7-4bc9-970c-b5d6c0d3c673",
+      "name": "Set Configuration Variables\t",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        592,
+        480
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "url": "=https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,arbitrum,ondo-finance,pax-gold,kinesis-silver,united-states-oil-fund-ondo-tokenized,tether&vs_currencies=usd,eur,inr,gbp,jpy,dkk&include_24hr_change=true",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "3758dbad-8b2c-4151-bb3e-03059037c4cd",
+      "name": "Fetch Crypto Data from CoinGecko\t",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        816,
+        480
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "content": "Triggers daily",
+        "height": 232,
+        "width": 180
+      },
+      "id": "763a4363-3867-4e92-ad2a-62d783cf1279",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        288,
+        416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Configure phone numbers, and email addresses here",
+        "height": 264,
+        "width": 180,
+        "color": 4
+      },
+      "id": "ee8655eb-8182-41d8-8188-243b70e71e48",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        544,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Fetches Info using CoinGecko API",
+        "height": 280,
+        "width": 196,
+        "color": 3
+      },
+      "id": "8ad71c8e-0bea-4da8-9246-d04008cb9499",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        768,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Processes Data",
+        "height": 232,
+        "width": 180,
+        "color": 5
+      },
+      "id": "76bb1187-3ed4-450c-8353-449fefb7974d",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        992,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=+33660639538",
+        "recipientPhoneNumber": "={{ $('Set Configuration Variables\t').item.json.whatsapp_number }}",
+        "textBody": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "id": "0d8944a6-d23b-4365-86c6-7b16fd3fe07a",
+      "name": "Send message",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        1584,
+        512
+      ],
+      "webhookId": "c8a2b9d7-c53b-4b6f-bcd7-052cf5a7fbb3",
+      "typeVersion": 1,
+      "credentials": {
+        "whatsAppApi": {
+          "id": "MaE7mhz5aGMJEcgM",
+          "name": "WhatsApp account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Set Configuration Variables\t').item.json.email_recipient }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        320
+      ],
+      "id": "d2c7126d-76db-4968-9a02-67a32658214b",
+      "name": "Send a message",
+      "webhookId": "83bda92f-1adc-4e6c-8c60-652b8de08ff6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Google uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5918390004",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        704
+      ],
+      "id": "9feff33a-d2cd-4e6b-926c-eec355966ade",
+      "name": "Send a text message",
+      "webhookId": "c8cd4f6f-0dbf-4306-b9aa-97a4559fa32c",
+      "credentials": {
+        "telegramApi": {
+          "id": "ujQ4741BdotCA13k",
+          "name": "Telegram account MarwanStation_bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC3385M60",
+          "mode": "list",
+          "cachedResultName": "financial-market"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1584,
+        896
+      ],
+      "id": "57035ce8-30e2-4b05-9b86-a684c3806f62",
+      "name": "Send a message1",
+      "webhookId": "21d16648-2426-4ab7-be13-f49a9591ceba",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "xEnPstvdcOT9mV8X",
+          "name": "Slack uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Retrieve the raw JSON response from the preceding CoinGecko HTTP Request node\nconst rawData = $input.first().json;\n\n// 1. Organize Data\nconst cryptoMap = {\n  'bitcoin': 'Bitcoin (BTC)',\n  'ethereum': 'Ethereum (ETH)',\n  'arbitrum': 'Arbitrum (ARB)',\n  'ondo-finance': 'Ondo (ONDO)'\n};\n\nconst commodityMap = {\n  'pax-gold': 'Gold (PAXG)',\n  'kinesis-silver': 'Silver (KAG)',\n  'united-states-oil-fund-ondo-tokenized': 'Crude Oil ETF Proxy (USOON)'\n};\n\nconst organized = {\n  crypto: [],\n  commodities: [],\n  forex: {}\n};\n\n// Format helper for currency & percentage\nconst formatUSD = (num) => num ? `$${Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';\nconst formatChange = (num) => {\n  if (num === undefined || num === null) return { text: '0.00%', color: '#666666' };\n  const isPositive = num >= 0;\n  return {\n    text: `${isPositive ? '+' : ''}${Number(num).toFixed(2)}%`,\n    color: isPositive ? '#16a34a' : '#dc2626'\n  };\n};\n\n// Populate Crypto\nfor (const [id, label] of Object.entries(cryptoMap)) {\n  if (rawData[id]) {\n    organized.crypto.push({\n      name: label,\n      price: formatUSD(rawData[id].usd),\n      change: formatChange(rawData[id].usd_24h_change)\n    });\n  }\n}\n\n// Populate Commodities\nfor (const [id, label] of Object.entries(commodityMap)) {\n  if (rawData[id]) {\n    organized.commodities.push({\n      name: label,\n      price: formatUSD(rawData[id].usd),\n      change: formatChange(rawData[id].usd_24h_change)\n    });\n  }\n}\n\n// Populate USD Forex Rates (including DKK, using Tether as ~1 USD reference)\nif (rawData['tether']) {\n  organized.forex = {\n    'USD / EUR': rawData['tether'].eur?.toFixed(4) || 'N/A',\n    'USD / INR': rawData['tether'].inr?.toFixed(2) || 'N/A',\n    'USD / GBP': rawData['tether'].gbp?.toFixed(4) || 'N/A',\n    'USD / JPY': rawData['tether'].jpy?.toFixed(2) || 'N/A',\n    'USD / DKK': rawData['tether'].dkk?.toFixed(4) || 'N/A'\n  };\n} else if (rawData['bitcoin'] && rawData['bitcoin'].usd) {\n  const btcUsd = rawData['bitcoin'].usd;\n  organized.forex = {\n    'USD / EUR': (rawData['bitcoin'].eur / btcUsd).toFixed(4),\n    'USD / INR': (rawData['bitcoin'].inr / btcUsd).toFixed(2),\n    'USD / GBP': (rawData['bitcoin'].gbp / btcUsd).toFixed(4),\n    'USD / JPY': (rawData['bitcoin'].jpy / btcUsd).toFixed(2),\n    'USD / DKK': (rawData['bitcoin'].dkk / btcUsd).toFixed(4)\n  };\n}\n\n// 2. Build HTML Email Rows\nconst buildRows = (items) => items.map(item => `\n  <tr>\n    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 500; color: #111827;\">${item.name}</td>\n    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #111827;\">${item.price}</td>\n    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600; color: ${item.change.color};\">${item.change.text}</td>\n  </tr>\n`).join('');\n\nconst forexRows = Object.entries(organized.forex).map(([pair, rate]) => `\n  <tr>\n    <td style=\"padding: 8px 12px; border-bottom: 1px solid #e5e7eb; color: #374151;\">${pair}</td>\n    <td style=\"padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600; color: #111827;\">${rate}</td>\n  </tr>\n`).join('');\n\n// 3. Assemble Full HTML Template\nconst dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });\n\nconst htmlEmail = `\n<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;\">\n  <div style=\"background-color: #ffffff; border-radius: 8px; padding: 24px; border: 1px solid #e5e7eb;\">\n    <h2 style=\"margin: 0 0 4px 0; color: #111827; font-size: 20px;\">Market Snapshot</h2>\n    <p style=\"margin: 0 0 20px 0; color: #6b7280; font-size: 13px;\">${dateStr} • Source: CoinGecko</p>\n\n    <!-- Crypto Section -->\n    <h3 style=\"margin: 20px 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #4b5563;\">Crypto</h3>\n    <table style=\"width: 100%; border-collapse: collapse; font-size: 14px;\">\n      <thead>\n        <tr style=\"background-color: #f3f4f6; color: #6b7280; font-size: 12px; text-transform: uppercase;\">\n          <th style=\"padding: 8px 12px; text-align: left;\">Asset</th>\n          <th style=\"padding: 8px 12px; text-align: right;\">Price (USD)</th>\n          <th style=\"padding: 8px 12px; text-align: right;\">24h Change</th>\n        </tr>\n      </thead>\n      <tbody>\n        ${buildRows(organized.crypto)}\n      </tbody>\n    </table>\n\n    <!-- Commodities Section -->\n    <h3 style=\"margin: 24px 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #4b5563;\">Commodities (Tokenized)</h3>\n    <table style=\"width: 100%; border-collapse: collapse; font-size: 14px;\">\n      <thead>\n        <tr style=\"background-color: #f3f4f6; color: #6b7280; font-size: 12px; text-transform: uppercase;\">\n          <th style=\"padding: 8px 12px; text-align: left;\">Asset</th>\n          <th style=\"padding: 8px 12px; text-align: right;\">Price (USD)</th>\n          <th style=\"padding: 8px 12px; text-align: right;\">24h Change</th>\n        </tr>\n      </thead>\n      <tbody>\n        ${buildRows(organized.commodities)}\n      </tbody>\n    </table>\n\n    <!-- Forex Section -->\n    <h3 style=\"margin: 24px 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #4b5563;\">USD Exchange Rates</h3>\n    <table style=\"width: 100%; border-collapse: collapse; font-size: 14px;\">\n      <tbody>\n        ${forexRows}\n      </tbody>\n    </table>\n  </div>\n</div>\n`;\n\n// 4. Plain Text Fallback\nconst textEmail = `Market Snapshot (${dateStr})\\n\\n` +\n  `CRYPTO:\\n` + organized.crypto.map(c => `- ${c.name}: ${c.price} (${c.change.text})`).join('\\n') + `\\n\\n` +\n  `COMMODITIES:\\n` + organized.commodities.map(c => `- ${c.name}: ${c.price} (${c.change.text})`).join('\\n') + `\\n\\n` +\n  `FOREX:\\n` + Object.entries(organized.forex).map(([k, v]) => `- ${k}: ${v}`).join('\\n');\n\nreturn [\n  {\n    json: {\n      subject: `Daily Market Prices - ${dateStr}`,\n      html: htmlEmail,\n      text: textEmail,\n      rawOrganized: organized\n    }\n  }\n];"
+      },
+      "id": "647a353c-143c-467d-8863-7c2a3097a5ad",
+      "name": "Process Crypto Movements",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1040,
+        480
+      ],
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "Daily Crypto Trigger\t": {
+      "main": [
+        [
+          {
+            "node": "Set Configuration Variables\t",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Configuration Variables\t": {
+      "main": [
+        [
+          {
+            "node": "Fetch Crypto Data from CoinGecko\t",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Crypto Data from CoinGecko\t": {
+      "main": [
+        [
+          {
+            "node": "Process Crypto Movements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Crypto Movements": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateId": "7729",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "3e9e01c1-094f-47c9-a12e-c0a56e650cb1",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-11-15T14:09:24.092Z",
+      "createdAt": "2026-11-15T14:09:24.092Z",
+      "role": "workflow:owner",
+      "workflowId": "uIUPFm9CB7BqPmFN",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
