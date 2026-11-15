@@ -1,0 +1,171 @@
+{
+  "updatedAt": "2026-06-29T07:52:18.001Z",
+  "createdAt": "2026-04-11T10:30:10.013Z",
+  "id": "RBoOsW9qw541SHTX",
+  "name": "[OK] Whatsapp Agent",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {
+          "messageStatusUpdates": [
+            "all"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "036e89f6-0e4f-4f6e-bb64-a9902b598b1a",
+      "name": "WhatsApp Trigger",
+      "webhookId": "6869144e-b297-4687-ad94-b0cc37e0c0e1",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "8LowxkKUYd0v1p0k",
+          "name": "WhatsApp OAuth account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messages[0].text.body }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5b24e8d3-feb7-40be-8b66-969435fee0d3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1185063931348690",
+        "recipientPhoneNumber": "=+{{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        0
+      ],
+      "id": "8979e620-373b-4fd7-a7ee-5466c2de903f",
+      "name": "Send message",
+      "webhookId": "3c91d2a6-19e8-4e7f-8113-a7e5726a64b8",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "MaE7mhz5aGMJEcgM",
+          "name": "WhatsApp account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        256
+      ],
+      "id": "0567460a-8558-45b0-8da1-0fc1f1d87257",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kzvMnsf7aw69V52P",
+          "name": "Google Gemini Perso-Marwan"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "dynamic",
+    "timezone": "Europe/Copenhagen",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 1
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "140c1c0a-c53b-4fc1-84b1-2ba4c90cb090",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-11T10:30:10.027Z",
+      "createdAt": "2026-04-11T10:30:10.027Z",
+      "role": "workflow:owner",
+      "workflowId": "RBoOsW9qw541SHTX",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": [
+    {
+      "updatedAt": "2026-06-02T04:21:05.658Z",
+      "createdAt": "2026-06-02T04:21:05.658Z",
+      "id": "PNQ3FdiQRVFpuERQ",
+      "name": "whatsapp"
+    },
+    {
+      "updatedAt": "2026-06-02T04:21:01.660Z",
+      "createdAt": "2026-06-02T04:21:01.660Z",
+      "id": "VQQQff7DmqLhkdOs",
+      "name": "agent"
+    }
+  ]
+}
