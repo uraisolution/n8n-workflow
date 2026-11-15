@@ -1,0 +1,886 @@
+{
+  "updatedAt": "2026-11-15T14:10:54.381Z",
+  "createdAt": "2026-10-04T13:33:09.892Z",
+  "id": "oK0QNsmJSkUwjC00",
+  "name": "[OK] URAI Solution RAG Chatbot V2",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Add documents to semantic database",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Add PDF files here",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9410224b-edc4-4d27-b047-b8c707ff4d9f",
+      "name": "On form submission",
+      "webhookId": "63ec5014-ac34-43d0-a52b-760e31173d64"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "mode": "id",
+          "value": "rag_chatbot"
+        },
+        "embeddingBatchSize": 600,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c4110451-f7fd-46fb-9936-55f520af8b93",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "gmFFiTr7xZbErxNI",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        528
+      ],
+      "id": "d1caa5cf-8371-40bd-ac6f-b2afe6ea00a6",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "nlE0znqpIDuW42KZ",
+          "name": "Ollama account PC:foxmarwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        256
+      ],
+      "id": "378e1586-b257-45cc-8a32-dd115ccf4e77",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkSize": 400,
+        "chunkOverlap": 100,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        448,
+        464
+      ],
+      "id": "ecdee835-49db-4d76-b65f-0afc98a0c905",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "content": "## RAG Ingestion process\n**adds all the data to the semantic database",
+        "height": 720,
+        "width": 752,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "b34b2f2d-0fdc-400c-afa8-1b534e659f5f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        816,
+        -272
+      ],
+      "id": "4cd7962a-d0b2-4cca-8a98-9599894f0952",
+      "name": "When chat message received",
+      "webhookId": "8d38c06a-2687-433b-8eea-6bc004c5ae54",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "You are the official AI Assistant for URAI Solution, an enterprise-grade AI automation agency specializing in custom AI Chatbots, Voice Assistants, Workflow Automations, and AI Analytics.\n\nYOUR GOAL:\nAssist website visitors with accuracy, clarity, and professionalism regarding URAI Solution's services, implementations, processes, and pricing models.\n\nOPERATING RULES & TOOL USAGE:\n1. ALWAYS use your `database_retriever` (Qdrant Vector Tool) to fetch context before answering any query about URAI Solution.\n2. When the user asks for a full list, catalog, or overview of services/solutions, you MUST perform a comprehensive retrieval from the `database_retriever` to ensure all available offerings are included. Never summarize away or omit any solutions.\n3. Be concise, engaging, and professional. Structure long answers with clear bullet points and bold highlights.\n4. Maintain a helpful and forward-looking tone appropriate for a modern tech agency.\n\nDo not use Markdown formatting (such as asterisks ** for bold text or # for headings) in your responses. Output standard plain text only.\nFALLBACK INSTRUCTION:\nIf the vector database does not contain sufficient information to answer the user's question, or if you are unsure or unable to answer a specific query, reply ONLY with:\n\"I cannot provide an answer for that specific question, please contact us on Uraisolution.contact@gmail.com\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1072,
+        48
+      ],
+      "id": "a6b103b3-1353-4613-8fd2-ff85c2f53b64",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        896,
+        512
+      ],
+      "id": "4e051f1b-c1b9-4e42-8b41-b1cfa462e50a",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "nlE0znqpIDuW42KZ",
+          "name": "Ollama account PC:foxmarwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $workflow.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1168,
+        288
+      ],
+      "id": "e6748d8f-4fac-4219-99af-bfdac3f8f3db",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to fetch knowledge from the database",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "rag_chatbot",
+          "mode": "id"
+        },
+        "topK": 20,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        1472,
+        400
+      ],
+      "id": "7513d88a-fc0e-4679-be2a-a402dc10bc01",
+      "name": "Qdrant Vector Store1",
+      "credentials": {
+        "qdrantApi": {
+          "id": "gmFFiTr7xZbErxNI",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## RAG Chatbot\n**Chat with your own data[OK] AI Chatbot for website",
+        "height": 720,
+        "width": 1024,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        784,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "50d187cf-1b94-4d61-9784-64aa97b8584b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        304
+      ],
+      "id": "f597aade-3306-4e94-8ac8-657154b48788",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kzvMnsf7aw69V52P",
+          "name": "Google Gemini Perso-Marwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        880,
+        288
+      ],
+      "id": "02f9bcde-ba9c-49d5-979e-e6139c711efe",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kzvMnsf7aw69V52P",
+          "name": "Google Gemini Perso-Marwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.output) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1536,
+        48
+      ],
+      "id": "a7ddfe82-0117-4c90-bbd5-e4eb610e6c3a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        48
+      ],
+      "id": "1559d33a-cf53-4e29-8240-8a4c1251f190",
+      "name": "Webhook",
+      "webhookId": "09f95ef6-b7b1-4ecd-ac59-9d787424d7f6"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        []
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "dynamic",
+    "timezone": "Europe/Copenhagen",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "9d8501d1-ba53-4b75-9ffc-4053aa1a3e69",
+  "activeVersionId": "02a499e3-d88e-4c01-bc82-7ebb6786fd53",
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-10-04T13:33:09.903Z",
+      "createdAt": "2026-10-04T13:33:09.903Z",
+      "role": "workflow:owner",
+      "workflowId": "oK0QNsmJSkUwjC00",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-10-25T15:16:18.000Z",
+    "createdAt": "2026-10-25T15:16:03.504Z",
+    "versionId": "02a499e3-d88e-4c01-bc82-7ebb6786fd53",
+    "workflowId": "oK0QNsmJSkUwjC00",
+    "nodes": [
+      {
+        "parameters": {
+          "formTitle": "Add documents to semantic database",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Add PDF files here",
+                "fieldType": "file",
+                "acceptFileTypes": ".pdf",
+                "requiredField": true
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.formTrigger",
+        "typeVersion": 2.5,
+        "position": [
+          0,
+          0
+        ],
+        "id": "9410224b-edc4-4d27-b047-b8c707ff4d9f",
+        "name": "On form submission",
+        "webhookId": "63ec5014-ac34-43d0-a52b-760e31173d64"
+      },
+      {
+        "parameters": {
+          "mode": "insert",
+          "qdrantCollection": {
+            "__rl": true,
+            "mode": "id",
+            "value": "rag_chatbot"
+          },
+          "embeddingBatchSize": 600,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+        "typeVersion": 1.3,
+        "position": [
+          208,
+          0
+        ],
+        "id": "c4110451-f7fd-46fb-9936-55f520af8b93",
+        "name": "Qdrant Vector Store",
+        "credentials": {
+          "qdrantApi": {
+            "id": "gmFFiTr7xZbErxNI",
+            "name": "Qdrant account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "model": "llama3.2:1b"
+        },
+        "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+        "typeVersion": 1,
+        "position": [
+          -16,
+          528
+        ],
+        "id": "d1caa5cf-8371-40bd-ac6f-b2afe6ea00a6",
+        "name": "Embeddings Ollama",
+        "credentials": {
+          "ollamaApi": {
+            "id": "nlE0znqpIDuW42KZ",
+            "name": "Ollama account PC:foxmarwan"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "dataType": "binary",
+          "textSplittingMode": "custom",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+        "typeVersion": 1.1,
+        "position": [
+          352,
+          256
+        ],
+        "id": "378e1586-b257-45cc-8a32-dd115ccf4e77",
+        "name": "Default Data Loader"
+      },
+      {
+        "parameters": {
+          "chunkSize": 400,
+          "chunkOverlap": 100,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+        "typeVersion": 1,
+        "position": [
+          448,
+          464
+        ],
+        "id": "ecdee835-49db-4d76-b65f-0afc98a0c905",
+        "name": "Recursive Character Text Splitter"
+      },
+      {
+        "parameters": {
+          "content": "## RAG Ingestion process\n**adds all the data to the semantic database",
+          "height": 720,
+          "width": 752,
+          "color": 3
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -80,
+          -80
+        ],
+        "typeVersion": 1,
+        "id": "b34b2f2d-0fdc-400c-afa8-1b534e659f5f",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+        "typeVersion": 1.4,
+        "position": [
+          816,
+          -272
+        ],
+        "id": "4cd7962a-d0b2-4cca-8a98-9599894f0952",
+        "name": "When chat message received",
+        "webhookId": "8d38c06a-2687-433b-8eea-6bc004c5ae54",
+        "disabled": true
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.body.message }}",
+          "options": {
+            "systemMessage": "You are the official AI Assistant for URAI Solution, an enterprise-grade AI automation agency specializing in custom AI Chatbots, Voice Assistants, Workflow Automations, and AI Analytics.\n\nYOUR GOAL:\nAssist website visitors with accuracy, clarity, and professionalism regarding URAI Solution's services, implementations, processes, and pricing models.\n\nOPERATING RULES & TOOL USAGE:\n1. ALWAYS use your `database_retriever` (Qdrant Vector Tool) to fetch context before answering any query about URAI Solution.\n2. When the user asks for a full list, catalog, or overview of services/solutions, you MUST perform a comprehensive retrieval from the `database_retriever` to ensure all available offerings are included. Never summarize away or omit any solutions.\n3. Be concise, engaging, and professional. Structure long answers with clear bullet points and bold highlights.\n4. Maintain a helpful and forward-looking tone appropriate for a modern tech agency.\n\nDo not use Markdown formatting (such as asterisks ** for bold text or # for headings) in your responses. Output standard plain text only.\nFALLBACK INSTRUCTION:\nIf the vector database does not contain sufficient information to answer the user's question, or if you are unsure or unable to answer a specific query, reply ONLY with:\n\"I cannot provide an answer for that specific question, please contact us on Uraisolution.contact@gmail.com\""
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          1072,
+          48
+        ],
+        "id": "a6b103b3-1353-4613-8fd2-ff85c2f53b64",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "model": "llama3.2:1b",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+        "typeVersion": 1,
+        "position": [
+          896,
+          512
+        ],
+        "id": "4e051f1b-c1b9-4e42-8b41-b1cfa462e50a",
+        "name": "Ollama Chat Model",
+        "credentials": {
+          "ollamaApi": {
+            "id": "nlE0znqpIDuW42KZ",
+            "name": "Ollama account PC:foxmarwan"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $workflow.id }}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3,
+        "position": [
+          1168,
+          288
+        ],
+        "id": "e6748d8f-4fac-4219-99af-bfdac3f8f3db",
+        "name": "Simple Memory"
+      },
+      {
+        "parameters": {
+          "mode": "retrieve-as-tool",
+          "toolDescription": "Use this tool to fetch knowledge from the database",
+          "qdrantCollection": {
+            "__rl": true,
+            "value": "rag_chatbot",
+            "mode": "id"
+          },
+          "topK": 20,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+        "typeVersion": 1.3,
+        "position": [
+          1472,
+          400
+        ],
+        "id": "7513d88a-fc0e-4679-be2a-a402dc10bc01",
+        "name": "Qdrant Vector Store1",
+        "credentials": {
+          "qdrantApi": {
+            "id": "gmFFiTr7xZbErxNI",
+            "name": "Qdrant account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "content": "## RAG Chatbot\n**Chat with your own data[OK] AI Chatbot for website",
+          "height": 720,
+          "width": 1024,
+          "color": 4
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          784,
+          -80
+        ],
+        "typeVersion": 1,
+        "id": "50d187cf-1b94-4d61-9784-64aa97b8584b",
+        "name": "Sticky Note1"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-embedding-2"
+        },
+        "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          -16,
+          304
+        ],
+        "id": "f597aade-3306-4e94-8ac8-657154b48788",
+        "name": "Embeddings Google Gemini",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "kzvMnsf7aw69V52P",
+            "name": "Google Gemini Perso-Marwan"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-3.5-flash-lite",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          880,
+          288
+        ],
+        "id": "02f9bcde-ba9c-49d5-979e-e6139c711efe",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "kzvMnsf7aw69V52P",
+            "name": "Google Gemini Perso-Marwan"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify($json.output) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1536,
+          48
+        ],
+        "id": "a7ddfe82-0117-4c90-bbd5-e4eb610e6c3a",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "website-chatbot",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          880,
+          48
+        ],
+        "id": "1559d33a-cf53-4e29-8240-8a4c1251f190",
+        "name": "Webhook",
+        "webhookId": "09f95ef6-b7b1-4ecd-ac59-9d787424d7f6"
+      }
+    ],
+    "connections": {
+      "On form submission": {
+        "main": [
+          [
+            {
+              "node": "Qdrant Vector Store",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Embeddings Ollama": {
+        "ai_embedding": [
+          []
+        ]
+      },
+      "Default Data Loader": {
+        "ai_document": [
+          [
+            {
+              "node": "Qdrant Vector Store",
+              "type": "ai_document",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Recursive Character Text Splitter": {
+        "ai_textSplitter": [
+          [
+            {
+              "node": "Default Data Loader",
+              "type": "ai_textSplitter",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "When chat message received": {
+        "main": [
+          []
+        ]
+      },
+      "Ollama Chat Model": {
+        "ai_languageModel": [
+          []
+        ]
+      },
+      "Simple Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Qdrant Vector Store1": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Embeddings Google Gemini": {
+        "ai_embedding": [
+          [
+            {
+              "node": "Qdrant Vector Store1",
+              "type": "ai_embedding",
+              "index": 0
+            },
+            {
+              "node": "Qdrant Vector Store",
+              "type": "ai_embedding",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "uraisolution contact",
+    "name": "[OK] URAI Solution RAG Chatbot V2",
+    "description": "",
+    "autosaved": true
+  },
+  "tags": []
+}
