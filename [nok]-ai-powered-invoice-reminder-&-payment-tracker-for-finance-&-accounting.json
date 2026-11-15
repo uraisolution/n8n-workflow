@@ -1,0 +1,840 @@
+{
+  "updatedAt": "2026-07-05T15:17:21.000Z",
+  "createdAt": "2026-07-02T17:11:11.164Z",
+  "id": "zvTQdeXmYTLcN3vy",
+  "name": "[NOK] AI-Powered Invoice Reminder & Payment Tracker for Finance & Accounting",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json['Payment status'] }}",
+              "rightValue": "Unpaid"
+            },
+            {
+              "id": "2a54d7aa-9e17-4eb4-8e76-228cf1957751",
+              "leftValue": "={{ $json['Days overdue'] }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f404532d-39e5-4391-bda3-0554ac1333ca",
+      "name": "Filter Overdue Invoices",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        480,
+        112
+      ],
+      "notesInFlow": true,
+      "typeVersion": 2,
+      "notes": "Separate overdue from upcoming"
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoices = $input.all();\nconst today = new Date();\nconst results = [];\n\nfor (const invoice of invoices) {\n  const data = invoice.json;\n\n  // 1. Safely extract and clean data fields\n  const rawDueDate = data['Due date'];\n  const rawIssueDate = data['Issue date'];\n  const rawLastReminder = data['Last reminder sent'];\n\n  // 2. Convert to valid Date objects or null\n  const dueDate = rawDueDate ? new Date(rawDueDate) : null;\n  const issueDate = rawIssueDate ? new Date(rawIssueDate) : null;\n  \n  // Handle empty strings \"\" or whitespace gracefully for last reminder\n  const lastReminder = (rawLastReminder && String(rawLastReminder).trim() !== '') \n    ? new Date(rawLastReminder) \n    : null;\n\n  // 3. FOOLPROOF GUARD: Skip or default if critical due date is invalid\n  if (!dueDate || isNaN(dueDate.getTime())) {\n    // If there's no valid due date, we skip reminder logic for this row to prevent crashes\n    continue; \n  }\n\n  // 4. Calculate days overdue safely\n  const daysOverdue = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));\n\n  // 5. Calculate days since last reminder safely\n  let daysSinceReminder = 999;\n  if (lastReminder && !isNaN(lastReminder.getTime())) {\n    daysSinceReminder = Math.floor((today - lastReminder) / (1000 * 60 * 60 * 24));\n  }\n\n  // 6. Determine reminder type and urgency\n  let reminderType = '';\n  let urgencyLevel = '';\n  let shouldSendReminder = false;\n\n  if (daysOverdue > 30 && daysSinceReminder >= 3) {\n    reminderType = 'final_notice';\n    urgencyLevel = 'critical';\n    shouldSendReminder = true;\n  } else if (daysOverdue > 14 && daysSinceReminder >= 5) {\n    reminderType = 'second_reminder';\n    urgencyLevel = 'high';\n    shouldSendReminder = true;\n  } else if (daysOverdue > 0 && daysSinceReminder >= 7) {\n    reminderType = 'first_reminder';\n    urgencyLevel = 'medium';\n    shouldSendReminder = true;\n  } else if (daysOverdue === 0) {\n    reminderType = 'due_today';\n    urgencyLevel = 'medium';\n    shouldSendReminder = true;\n  } else if (daysOverdue < 0 && daysOverdue >= -3 && !lastReminder) {\n    reminderType = 'upcoming_reminder';\n    urgencyLevel = 'low';\n    shouldSendReminder = true;\n  }\n\n  // 7. Output results\n  if (shouldSendReminder) {\n    results.push({\n      json: {\n        ...data,\n        daysOverdue,\n        daysSinceReminder,\n        reminderType,\n        urgencyLevel,\n        shouldSendReminder\n      }\n    });\n  }\n}\n\nreturn results;"
+      },
+      "id": "b4ee55e3-cf0e-4825-a66d-730af38ea693",
+      "name": "Calculate Reminder Logic",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        704,
+        112
+      ],
+      "notesInFlow": true,
+      "typeVersion": 2,
+      "notes": "Smart logic for reminder timing"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ai-prompt",
+              "name": "aiPrompt",
+              "type": "string",
+              "value": "=Generate a professional and friendly payment reminder email for the following invoice:\n\nClient Name: {{ $('Get row(s) in sheet').item.json['Client name'] }}\nInvoice Number: {{ $('Get row(s) in sheet').item.json['Invoice number'] }} and {{ $json['Invocie ID'] }}\nAmount: {{ $('Get row(s) in sheet').item.json['Invoice amount'] }}\nIssue Date: {{ $('Get row(s) in sheet').item.json['Issue date'] }}\nDue Date: {{ $('Get row(s) in sheet').item.json['Due date'] }}\nDays Overdue: {{ $('Get row(s) in sheet').item.json['Days overdue'] }}\n\nThe email should:\n- Be courteous and professional\n- Clearly state the outstanding amount and invoice details\n- Mention the due date and overdue status if applicable\n- Include a polite call-to-action for payment\n- Provide payment instructions or link\n- Be appropriately urgent based on the reminder type\n- End with a professional signature by including URAI Solution (our company)\n\nFormat the response as a complete email with subject line. Do not put the subject line in the e-mail response only in the subject line of the e-mail. Include the {{ $json['Invocie ID'] }} in the subject instead of {{ $json['Invoice number'] }}\n\nDO not put the \"example\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c2ac1ad8-bbcb-4541-890c-1be7341686b5",
+      "name": "Prepare AI Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        928,
+        112
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // 1. Safe AI input capture\n  let aiResponse = data.output || '';\n  if (typeof aiResponse !== 'string') {\n    aiResponse = String(aiResponse);\n  }\n\n  // Convert literal \"\\n\" text strings to real line breaks\n  aiResponse = aiResponse.replace(/\\\\n/g, '\\n');\n\n  // 2. Extract and strip out Subject\n  const subjectMatch = aiResponse.match(/Subject:\\s*(.+?)(?:\\n|$)/i);\n  \n  // --- UPDATED FALLBACK TO USE INVOCIE ID ---\n  const invoiceId = data['Invocie ID'] || data['Invoice number'] || 'N/A';\n  const subject = subjectMatch ? subjectMatch[1].trim() : `Payment Reminder - Invoice ID ${invoiceId}`;\n  \n  let mainBody = aiResponse.replace(/Subject:\\s*.+?(?:\\n|$)/i, '').trim();\n  if (!mainBody) { mainBody = aiResponse; }\n\n  // 3. Clean up greeting formatting dynamically based on your Sheet input\n  const clientName = data['Client name'] || 'Customer';\n  const greetingRegex = new RegExp(`Dear\\\\s+${clientName},?`, 'i');\n  mainBody = mainBody.replace(greetingRegex, `Dear ${clientName},`);\n\n  // 4. Extract target data table variables safely\n  const invoiceNum = data['Invoice number'] || 'N/A';\n  const currency = data['Currency'] || '';\n  const amount = data['Invoice amount'] || '0.00';\n  const dueDate = data['Due date'] || 'N/A';\n  const daysOverdue = parseInt(data['Days overdue'] || data.daysOverdue, 10);\n\n  let statusText = 'Due Soon';\n  let statusColor = '#f57c00';\n  if (!isNaN(daysOverdue) && daysOverdue > 0) {\n    statusText = `Overdue by ${daysOverdue} days`;\n    statusColor = '#d32f2f';\n  }\n\n  // Build the clean HTML Table block\n  const invoiceTable = `\n  <div style=\"background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; max-width: 500px;\">\n    <h3 style=\"color: #333; margin-top: 0; font-family: Arial, sans-serif;\">Invoice Details</h3>\n    <table style=\"width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;\">\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Invoice Number:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333;\">${invoiceNum}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Invoice ID:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333;\">${invoiceId}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Amount:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333; font-weight: bold;\">${currency} ${amount}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Due Date:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: #333;\">${dueDate}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; font-weight: bold; color: #555;\">Status:</td>\n        <td style=\"padding: 8px 0; text-align: right; color: ${statusColor}; font-weight: bold;\">${statusText}</td>\n      </tr>\n    </table>\n  </div>\n  `;\n\n  // 5. REMOVE THE EXAMPLE LINES AND PLACEHOLDERS COMPLETELY\n  mainBody = mainBody\n    .replace(/\\[Insert your preferred payment instructions[\\s\\S]*?\\]/gi, '') // Strips bracket text\n    .replace(/^.*\\*Example:.*$/gm, '')                                       // Strips any line containing *Example:*\n    .replace(/\\n\\s*\\n\\s*\\n/g, '\\n\\n')                                        // Cleans up trailing blank space lines\n    .trim();\n\n  // 6. Split body up around the table insertion spot dynamically\n  let introduction = `Dear ${clientName},`;\n  let contentText = mainBody;\n\n  if (mainBody.toLowerCase().startsWith(`dear ${clientName.toLowerCase()},`)) {\n    contentText = mainBody.substring(`dear ${clientName},`.length).trim();\n  }\n\n  // Convert text paragraphs to HTML breaks safely\n  let formattedContent = contentText\n    .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')\n    .replace(/\\n/g, '<br>');\n\n  // Isolate sections dynamically to drop table in perfectly after instructions intro paragraph\n  const splitPoints = formattedContent.split('<br><br>');\n  const topSection = splitPoints.slice(0, 3).join('<br><br>');\n  const bottomSection = splitPoints.slice(3).join('<br><br>');\n\n  // 7. Assemble Final Email Layout\n  const htmlBody = `\n  <html>\n    <body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\">\n      <p style=\"margin-bottom: 20px;\">${introduction}</p>\n      <div>${topSection}</div>\n      ${invoiceTable}\n      <div>${bottomSection}</div>\n      <div style=\"margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;\">\n        <p>This is an automated reminder. If you have already made this payment, please disregard this email.</p>\n      </div>\n    </body>\n  </html>\n  `;\n  \n  results.push({\n    json: {\n      ...data,\n      emailSubject: subject,\n      emailBody: htmlBody,\n      emailBodyPlain: mainBody.replace(/<[^>]*>/g, '')\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "290feb01-989f-43fa-b47b-10cdbbe5ddf4",
+      "name": "Format Email",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1504,
+        112
+      ],
+      "notesInFlow": true,
+      "typeVersion": 2,
+      "notes": "Format email with HTML styling"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice-paid",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a850c2ca-438b-48a8-9b26-f185c75b495b",
+      "name": "Webhook: Payment Received",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -16,
+        784
+      ],
+      "webhookId": "invoice-payment-webhook",
+      "notesInFlow": true,
+      "typeVersion": 2,
+      "notes": "Trigger when payment is received"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE invoices \nSET \n  payment_status = 'paid',\n  payment_date = CURRENT_TIMESTAMP,\n  payment_amount = {{ $json.body.amount }},\n  payment_method = '{{ $json.body.payment_method }}'\nWHERE invoice_number = '{{ $json.body.invoice_number }}'\nRETURNING *;",
+        "options": {}
+      },
+      "id": "546db247-ed13-4d8b-98a4-4ffa94b0c9ce",
+      "name": "Update Payment Status",
+      "type": "n8n-nodes-base.postgres",
+      "position": [
+        240,
+        784
+      ],
+      "typeVersion": 2.4
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Payment recorded successfully\",\n  \"invoice_number\": \"{{ $json.invoice_number }}\",\n  \"amount_paid\": {{ $json.payment_amount }},\n  \"status\": \"{{ $json.payment_status }}\"\n}",
+        "options": {}
+      },
+      "id": "ce2757ec-04bc-4e7a-8532-4ffb91ec0a3b",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        496,
+        560
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "fromEmail": "user@example.com",
+        "toEmail": "user@example.com",
+        "subject": "=Payment Confirmation - Invoice {{ $json.invoice_number }}",
+        "options": {}
+      },
+      "id": "178e27fd-b0a9-4474-9342-07ea2f74956a",
+      "name": "Send Payment Confirmation",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [
+        528,
+        944
+      ],
+      "webhookId": "11ecce72-7466-43e6-8c05-d5f181c5ced7",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "content": "Starts the workflow automatically each morning.",
+        "height": 288,
+        "width": 192
+      },
+      "id": "930d8ee1-0925-45d5-96ea-3fa3b7474b15",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Decides when and how to send reminders.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "7ae3377e-8925-45e6-9d5a-fd6445929454",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        672,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Keeps only overdue invoices.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "0da4591d-1a55-4cf5-bd8e-487315802eae",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        448,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Creates a personalized AI prompt for each client.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "e5dde42f-191f-47e1-b35a-81005eeaa5b9",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        896,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Marks reminder as sent in the database.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "57912343-8758-454b-9e3b-c3d6a3bf07a7",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1904,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Sends the email via Gmail\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "ba0c94fb-05c3-4dc2-a1b8-7eec8d31572a",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1680,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Converts AI text to a professional HTML email.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "b2299f32-f257-4be5-a392-b93cc2df8c11",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1456,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Uses AI to draft reminder emails.\n",
+        "height": 288,
+        "width": 272
+      },
+      "id": "ec2a5e0b-a5df-42bf-8e2a-c59fed5518e3",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1136,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Generates thank-you massage via AI.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "c1146384-8bf9-4661-ba42-f04c6922fc5e",
+      "name": "Sticky Note13",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        464,
+        416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Captures payment notifications.\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "5cda9ded-63db-4dfe-9cc7-cbb15279a706",
+      "name": "Sticky Note14",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        656
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Updates invoice as “paid.”\n",
+        "height": 288,
+        "width": 192
+      },
+      "id": "6c104c25-0d63-4dd0-9382-48e410f2686e",
+      "name": "Sticky Note15",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        192,
+        656
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "Sends payment receipt to client.",
+        "height": 288,
+        "width": 192
+      },
+      "id": "964de6e1-ce00-4770-8eb1-3f29895dba47",
+      "name": "Sticky Note16",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        832
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1e2wb4-ysSyUNhTu88aCOCioxN2_aPXe2talj1kMvTGw",
+          "mode": "list",
+          "cachedResultName": "Invoice reminder",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1e2wb4-ysSyUNhTu88aCOCioxN2_aPXe2talj1kMvTGw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1e2wb4-ysSyUNhTu88aCOCioxN2_aPXe2talj1kMvTGw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        112
+      ],
+      "id": "e9450bea-7852-43e9-a1b9-c9f7e5185b97",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QlVkhdM3NA1MOvJc",
+          "name": "Google Sheets account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Take the {{ $json.aiPrompt }} from the incoming input data and use it to generate the professional payment reminder email",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1168,
+        112
+      ],
+      "id": "123534d4-8ec7-4d75-b716-406f9b573f69",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get row(s) in sheet').item.json[\"Client e-mail\"] }}",
+        "subject": "={{ $('Format Email').item.json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBodyPlain }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        112
+      ],
+      "id": "6a458cf6-1009-47d8-a754-ab761470f635",
+      "name": "Send a message",
+      "webhookId": "9d3c0ad4-03d9-418d-a7cf-e8f8133ceca9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dHb55EobTekTxpGI",
+          "name": "Gmail account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1e2wb4-ysSyUNhTu88aCOCioxN2_aPXe2talj1kMvTGw",
+          "mode": "list",
+          "cachedResultName": "Invoice reminder",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1e2wb4-ysSyUNhTu88aCOCioxN2_aPXe2talj1kMvTGw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1e2wb4-ysSyUNhTu88aCOCioxN2_aPXe2talj1kMvTGw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Last reminder sent": "={{ $now.format('yyyy-MM-dd') }}",
+            "Invocie ID": "={{ $('Get row(s) in sheet').item.json[\"Invocie ID\"] }}",
+            "Invoice number": "={{ $('Get row(s) in sheet').item.json[\"Invoice number\"] }}",
+            "Notification": "={{ $json.labelIds[0] }}"
+          },
+          "matchingColumns": [
+            "Invocie ID"
+          ],
+          "schema": [
+            {
+              "id": "Invocie ID",
+              "displayName": "Invocie ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client name",
+              "displayName": "Client name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Client e-mail",
+              "displayName": "Client e-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Invoice number",
+              "displayName": "Invoice number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Invoice amount",
+              "displayName": "Invoice amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Issue date",
+              "displayName": "Issue date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Due date",
+              "displayName": "Due date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Payment status",
+              "displayName": "Payment status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Days overdue",
+              "displayName": "Days overdue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last reminder sent",
+              "displayName": "Last reminder sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Notification",
+              "displayName": "Notification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1952,
+        112
+      ],
+      "id": "1fb007cb-3547-4741-b332-7635482d9f78",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QlVkhdM3NA1MOvJc",
+          "name": "Google Sheets account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        112
+      ],
+      "id": "f79716d2-ceac-44d0-abe1-6f7a8a6dec25",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BF8CHBN0J",
+          "mode": "list",
+          "cachedResultName": "invoice-reminder"
+        },
+        "text": "=Follow up on the {{ $('Get row(s) in sheet').item.json['Payment status'] }} Invoice {{ $('Get row(s) in sheet').item.json['Invocie ID'] }} by {{ $('Get row(s) in sheet').item.json['Client name'] }}. The client is {{ $('Get row(s) in sheet').item.json['Days overdue'] }} days overdue and had a due date on {{ $('Get row(s) in sheet').item.json['Due date'] }}. The last reminder was sent on {{ $('Get row(s) in sheet').item.json['Last reminder sent'] }}\n\nDaily Invoice Reminder Report - {{ $now.toFormat('yyyy-MM-dd') }}\n\n{{ $json.slackMessage }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1616,
+        400
+      ],
+      "id": "280c0b14-7fc7-43dc-b573-1017778cfcb2",
+      "name": "Send a message to URAI Solution team",
+      "webhookId": "331e62ed-6a58-4ed7-80cb-c07f0f0f9338",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "xEnPstvdcOT9mV8X",
+          "name": "Slack account uraisolution"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        384
+      ],
+      "id": "0eb689d5-2c55-4deb-801c-bb92d44c7e95",
+      "name": "Google Gemini Chat",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J0LJs0Sg7eEhKhtb",
+          "name": "Google Gemini(PaLM) Perso-Tarek"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Format Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message to URAI Solution team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Payment Status": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Payment Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Overdue Invoices": {
+      "main": [
+        [
+          {
+            "node": "Calculate Reminder Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Reminder Logic": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Payment Received": {
+      "main": [
+        [
+          {
+            "node": "Update Payment Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Overdue Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Europe/Copenhagen",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "722776de-19f7-4315-950a-812eab2e8f2b",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-07-02T17:11:11.182Z",
+      "createdAt": "2026-07-02T17:11:11.182Z",
+      "role": "workflow:owner",
+      "workflowId": "zvTQdeXmYTLcN3vy",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
