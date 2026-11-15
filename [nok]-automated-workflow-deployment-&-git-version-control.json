@@ -1,0 +1,1854 @@
+{
+  "updatedAt": "2026-11-15T15:05:55.261Z",
+  "createdAt": "2026-06-14T15:17:55.282Z",
+  "id": "LNhdSdE6NV127neq",
+  "name": "[NOK] Automated Workflow Deployment & Git Version Control",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "create",
+        "workflowObject": "={{ $json.toJsonString()  }}",
+        "requestOptions": {}
+      },
+      "id": "ffc98138-8afa-4cd6-8ba4-b235cc18c739",
+      "name": "Create new workflow in n8n",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        2368,
+        752
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ]
+            }
+          ]
+        }
+      },
+      "id": "d4891039-f8d2-465b-bbb6-098050f9e06c",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        368,
+        240
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "list",
+        "owner": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.github_account_name }}"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.github_repo_name }}"
+        },
+        "filePath": "=/{{ $json.repo_workflows_path }}"
+      },
+      "id": "174b78dc-e584-4fc1-82a2-0e58b4a98b36",
+      "name": "List files from repo",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        992,
+        368
+      ],
+      "webhookId": "0614066f-212d-4f9e-9da2-fa4a80b44baf",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "credentials": {
+        "githubApi": {
+          "id": "ex8jUra5eqUNz1EL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Set GitHub Details').item.json.github_account_name }}"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
+        },
+        "filePath": "={{ $json.path }}",
+        "asBinaryProperty": false,
+        "additionalParameters": {}
+      },
+      "id": "3dcf4423-8024-4797-adee-71912ba87c2b",
+      "name": "GitHub",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        1440,
+        368
+      ],
+      "webhookId": "71ad7d84-99cd-4fbd-a365-52537e69525b",
+      "typeVersion": 1.1,
+      "credentials": {
+        "githubApi": {
+          "id": "ex8jUra5eqUNz1EL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "filters": {},
+        "requestOptions": {}
+      },
+      "id": "315a2e65-1c4d-46b4-b17d-b949c776c116",
+      "name": "n8n",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        1216,
+        160
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Set GitHub Details').item.json.github_account_name }}"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
+        },
+        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Upload'].json.fileName }}",
+        "fileContent": "={{ $('To base64').item.json.data }}",
+        "commitMessage": "=n8n_backup_sync-{{ $node['Edit for Upload'].json.commitDate }}",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "id": "404e87cf-e561-4807-865a-26a6109c228f",
+      "name": "Upload file",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        3040,
+        -128
+      ],
+      "webhookId": "ce4b561b-acb9-4cd8-b76f-4928dada9674",
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "ex8jUra5eqUNz1EL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true
+        }
+      },
+      "id": "aee4f541-7ff4-441d-9c6b-1545676be55a",
+      "name": "Json file",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        2368,
+        -128
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "id": "9047c039-ef8e-4fb2-b58c-3056f02366c7",
+      "name": "To base64",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        2592,
+        -128
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## CHECK WHICH IS NEWER\n\n**IF TRUE** github workflow is the most recent, n8n to be updated\n\n**IF FALSE** n8n workflow is the most recent, github to be updated\n\n",
+        "height": 400,
+        "width": 340,
+        "color": 3
+      },
+      "id": "e5208d64-7f41-4be4-ad09-313aeb5fa89d",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2256,
+        144
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Set GitHub Details').item.json.github_account_name }}"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
+        },
+        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Update'].json.fileName }}",
+        "fileContent": "={{ $('To base').item.json.data }}",
+        "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}"
+      },
+      "id": "138bd609-541a-46d6-aa1e-792e85a58c05",
+      "name": "Update file",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        3856,
+        528
+      ],
+      "webhookId": "27218087-8df7-474d-a39f-70cfa9c34ec8",
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "ex8jUra5eqUNz1EL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true
+        }
+      },
+      "id": "72bd601d-fdce-4643-a26d-23e95f278110",
+      "name": "Json file1",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        3200,
+        528
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "id": "3974d157-1135-4068-bc3e-b295917cd49b",
+      "name": "To base",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        3408,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "id",
+              "field2": "id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eee2bfd1-e0e3-4db5-b4da-1bbc189f45e7",
+      "name": "n8n vs GitHub",
+      "type": "n8n-nodes-base.compareDatasets",
+      "position": [
+        1888,
+        240
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.dataset.id }}"
+        },
+        "workflowObject": "={{ $json.dataset.toJsonString() }}",
+        "requestOptions": {}
+      },
+      "id": "a94d4e6e-a250-4fe8-a092-a9e1697745c5",
+      "name": "Update workflow in n8n",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        2976,
+        272
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['same']['id']\n\n# Get all decoded workflow items\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+      },
+      "id": "09d43ee5-7a21-47cd-8bec-45ae16e8422f",
+      "name": "Code - InputB",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2752,
+        272
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['same']['id']\n\n# Get all decoded workflow items\nall_decoded = _('n8n').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+      },
+      "id": "d3be821f-a331-4dc7-993d-6af348fb1fb2",
+      "name": "Code - InputA",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2752,
+        528
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.dataset }}",
+        "options": {}
+      },
+      "id": "2a173594-512b-4308-b685-540bac3e2338",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2976,
+        528
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe4a36ef-9f04-40e3-99bd-cc517a49b440",
+              "name": "commitDate",
+              "type": "string",
+              "value": "={{ $now.format('dd-MM-yyyy/H:mm') }}"
+            },
+            {
+              "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
+              "name": "fileName",
+              "type": "string",
+              "value": "={{$('n8n vs GitHub').item.json.name\n.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7a43de98-2d25-4d0f-9b7c-47258dc7b405",
+      "name": "Edit for Upload",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2816,
+        -128
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe4a36ef-9f04-40e3-99bd-cc517a49b440",
+              "name": "commitDate",
+              "type": "string",
+              "value": "={{ $now.format('dd-MM-yyyy/H:mm') }}"
+            },
+            {
+              "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
+              "name": "fileName",
+              "type": "string",
+              "value": "={{\n$('Code - InputA').item.json.dataset.name.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "911736bd-1c6d-4b49-ade2-52d95f075a7f",
+      "name": "Edit for Update",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3632,
+        528
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "content": "## IF ONLY IN N8N\nUpdate GitHub with the relevant workflows",
+        "height": 320,
+        "width": 1000
+      },
+      "id": "1193d962-fb0d-4b9e-b94c-04c8942860e4",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2256,
+        -240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## IF ONLY IN GITHUB\nCreate new workflow in n8n",
+        "height": 340,
+        "width": 340,
+        "color": 6
+      },
+      "id": "e48eda08-7f73-46d6-ba81-f9e4b008fec3",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2256,
+        608
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "8ccf743b-3a66-44c0-a30b-72a1d4bcf60b",
+              "operator": {
+                "type": "dateTime",
+                "operation": "before"
+              },
+              "leftValue": "={{ $json.different.updatedAt.inputA }}",
+              "rightValue": "={{ $json.different.updatedAt.inputB }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c1909c33-d3f0-4d24-b4d7-fdf1e8074398",
+      "name": "If n8n before GitHub",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2368,
+        368
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{  $json.content.base64Decode() }}",
+        "options": {}
+      },
+      "id": "fd1022a0-4f67-4603-bf94-68415776c587",
+      "name": "Decode to json",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1648,
+        368
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "b9ed0bad-4ebe-4378-807e-1a6082c4461d",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              },
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "placeholder"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "102aadd9-ace3-4fc6-a9a9-ca546362373e",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        1216,
+        368
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "850e7497-0f2f-470e-a5a2-a85a0c12aaa2",
+              "name": "github_account_name",
+              "type": "string",
+              "value": "uraisolution"
+            },
+            {
+              "id": "5c2be15a-cb93-4fe4-a512-03a1880b8713",
+              "name": "github_repo_name",
+              "type": "string",
+              "value": "n8n-workflow"
+            },
+            {
+              "id": "f4f1f0c3-7a89-427c-942f-d0e74ba4583f",
+              "name": "repo_workflows_path",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0ddf93a8-4db3-4826-a658-8fb4aedb31ce",
+      "name": "Set GitHub Details",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        592,
+        240
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Build File Context').first().json.repoOwner }}"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Build File Context').first().json.repoName }}"
+        },
+        "filePath": "={{ $('Build File Context').first().json.filePath }}",
+        "fileContent": "={{ $('Build File Context').first().json.workflowJson }}",
+        "commitMessage": "={{ $('Build File Context').first().json.commitMessage }}",
+        "additionalParameters": {
+          "branch": {
+            "branch": "={{ $('Repo Config').item.json.branch }}"
+          }
+        }
+      },
+      "id": "b8cde9f7-ee23-4b83-b50b-241a476a74e6",
+      "name": "Update GitHub File",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        3136,
+        1584
+      ],
+      "webhookId": "0a0773b9-b07d-4a93-9f79-60b5c7d1b7de",
+      "typeVersion": 1.1,
+      "credentials": {
+        "githubApi": {
+          "id": "ex8jUra5eqUNz1EL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ `https://api.github.com/repos/${$('Build File Context').first().json.repoOwner}/${$('Build File Context').first().json.repoName}/contents/${$('Build File Context').first().json.filePath}?ref=${$('Build File Context').first().json.branch}` }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "4e1f8092-986e-4fc7-b146-14d6a8ac1400",
+      "name": "Get GitHub File SHA",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1936,
+        1712
+      ],
+      "typeVersion": 4.2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nc1",
+              "name": "success",
+              "type": "boolean",
+              "value": true
+            },
+            {
+              "id": "nc2",
+              "name": "message",
+              "type": "string",
+              "value": "No changes detected. GitHub commit skipped."
+            },
+            {
+              "id": "nc3",
+              "name": "workflow_name",
+              "type": "string",
+              "value": "={{ $('Build File Context').first().json.workflowName }}"
+            },
+            {
+              "id": "nc4",
+              "name": "github_path",
+              "type": "string",
+              "value": "={{ $('Build File Context').first().json.filePath }}"
+            },
+            {
+              "id": "nc5",
+              "name": "checked_at",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d10b39b3-434d-4544-9e3b-e785f62861ed",
+      "name": "No Changes Detected",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2624,
+        1808
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-skip",
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              },
+              "leftValue": "={{ $json.skipCommit }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "843972a9-d455-43d8-9384-fdaf0049aa7c",
+      "name": "Content Changed?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2384,
+        1696
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const currentSha = $('Get GitHub File SHA').first().json.sha;\nconst currentContent = $('Get GitHub File SHA').first().json.content;\nconst incomingContent = Buffer.from(\n  $('Build File Context').first().json.workflowJson\n).toString('base64').replace(/\\n/g, '');\n\nconst isDuplicate = currentSha && \n  currentContent?.replace(/\\n/g, '') === incomingContent;\n\nreturn [{\n  json: {\n    ...$('Get GitHub File SHA').first().json,\n    isDuplicate,\n    skipCommit: isDuplicate\n  }\n}];"
+      },
+      "id": "7e8ceda4-9daf-4c9d-be5c-90d4e085a354",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2160,
+        1696
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "path": "619609cd-1353-43d8-90f8-ea72300d783b",
+        "formTitle": "🚀 DevOps Control Center",
+        "formDescription": "Push workflows to GitHub and deploy to servers.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Workflow ID",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Environment Action",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "🛠️ Backup to Sandbox Folder"
+                  },
+                  {
+                    "option": "🚀 Promote to Production Folder & Deploy"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Commit Message",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "73515126-84b2-444b-bed1-cd5908013973",
+      "name": "DevOps Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        1040,
+        1712
+      ],
+      "webhookId": "619609cd-1353-43d8-90f8-ea72300d783b",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const formData = $('DevOps Form').first().json;\nconst workflow = $('Fetch Local Workflow').first().json;\nconst repoConfig = $('Repo Config').first().json;\n\nconst envMap = {\n  '🛠️ Backup to Sandbox Folder': 'sandbox',\n  '🚀 Promote to Production Folder & Deploy': 'production',\n  'sandbox': 'sandbox',\n  'production': 'production'\n};\n\nconst rawEnv = formData['Environment Action'];\nconst envAction = envMap[rawEnv];\n\nif (!envAction) {\n  throw new Error(`Unrecognised environment: '${rawEnv}'`);\n}\n\nconst safeName = workflow.name\n  .toLowerCase()\n  .replace(/[^a-z0-9_-]/g, '-')\n  .replace(/-+/g, '-')\n  .replace(/^-+|-+$/g, '');\n\nconst filePath = `github-workflow/${safeName}/${envAction}/${safeName}.json`;\n\nconst cleanWorkflow = {\n  name: workflow.name,\n  nodes: workflow.nodes,\n  connections: workflow.connections,\n  settings: workflow.settings,\n  staticData: workflow.staticData ?? null\n};\n\nreturn [{\n  json: {\n    workflow,\n    workflowJson: JSON.stringify(cleanWorkflow, null, 2),\n    workflowName: workflow.name,\n    envAction,\n    filePath,\n    commitMessage: formData['Commit Message'],\n    isProduction: envAction === 'production',\n    repoOwner: repoConfig.repoOwner,\n    repoName: repoConfig.repoName,\n    branch: repoConfig.branch\n  }\n}];"
+      },
+      "id": "65e7f5d7-df6f-42bb-8f4f-e4ab518769ee",
+      "name": "Build File Context",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1712,
+        1712
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rc1",
+              "name": "repoOwner",
+              "type": "string",
+              "value": "YOUR_GITHUB_USERNAME"
+            },
+            {
+              "id": "rc2",
+              "name": "repoName",
+              "type": "string",
+              "value": "YOUR_REPO_NAME"
+            },
+            {
+              "id": "rc3",
+              "name": "branch",
+              "type": "string",
+              "value": "main"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "800eaac7-745b-44d3-accf-8a767aa7748a",
+      "name": "Repo Config",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1488,
+        1712
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "workflowId": "={{ $json['Workflow ID'] }}",
+        "requestOptions": {}
+      },
+      "id": "bb92eb0b-a847-422f-852e-9466983e5203",
+      "name": "Fetch Local Workflow",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        1264,
+        1712
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-is-prod",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "leftValue": "={{ $('Build File Context').first().json.isProduction }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8a241b51-ee4a-4c51-b00f-63ca34004393",
+      "name": "Is Production Deploy?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        3584,
+        1696
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-status",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "404"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eea36e96-d522-4879-b1c8-f2b7bf0ed8fd",
+      "name": "GitHub File Exists?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2912,
+        1680
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "success",
+              "type": "boolean",
+              "value": false
+            },
+            {
+              "id": "e2",
+              "name": "error",
+              "type": "string",
+              "value": "={{ $json.execution.error.message }}"
+            },
+            {
+              "id": "e3",
+              "name": "failed_node",
+              "type": "string",
+              "value": "={{ $json.execution.lastNodeExecuted }}"
+            },
+            {
+              "id": "e4",
+              "name": "execution_id",
+              "type": "string",
+              "value": "={{ $json.execution.id }}"
+            },
+            {
+              "id": "e5",
+              "name": "failed_at",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3eb371e0-a320-45b9-b9fc-82e77b239226",
+      "name": "Build Error Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1296,
+        2224
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {},
+      "id": "5f2a15fa-2a72-42b7-a8f1-5ae7ddaa9b0f",
+      "name": "Workflow Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "position": [
+        1072,
+        2224
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "success",
+              "type": "boolean",
+              "value": true
+            },
+            {
+              "id": "a2",
+              "name": "environment",
+              "type": "string",
+              "value": "={{ $('Build File Context').first().json.envAction }}"
+            },
+            {
+              "id": "a3",
+              "name": "workflow_name",
+              "type": "string",
+              "value": "={{ $('Build File Context').first().json.workflowName }}"
+            },
+            {
+              "id": "a4",
+              "name": "github_path",
+              "type": "string",
+              "value": "={{ $('Build File Context').first().json.filePath }}"
+            },
+            {
+              "id": "a5",
+              "name": "prod_workflow_id",
+              "type": "string",
+              "value": "={{ $json.id ?? $('Resolve Prod Workflow ID').first().json.prodWorkflowId }}"
+            },
+            {
+              "id": "a6",
+              "name": "deployed_at",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cddbdb70-cfae-4d0e-a3bc-89746af0812c",
+      "name": "Build Success Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        5312,
+        1680
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "activate",
+        "workflowId": "={{ $json.id }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "id": "8eeee5a5-9db5-4530-b5ac-929e41adac3d",
+      "name": "Activate on Production",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        5088,
+        1680
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "workflowObject": "={{ JSON.stringify($json.workflowPayload) }}",
+        "requestOptions": {}
+      },
+      "id": "7d5e3ad7-1835-4daf-aabb-9c6db81adff5",
+      "name": "Create on Prod Server",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        4864,
+        1776
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "workflowId": "={{ $json.prodWorkflowId }}",
+        "workflowObject": "={{ JSON.stringify($json.workflowPayload) }}",
+        "requestOptions": {}
+      },
+      "id": "5ad86cef-a254-4652-ad83-be5dc7c033f2",
+      "name": "Update on Prod Server",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        4864,
+        1584
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 1,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-prod-exists",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "leftValue": "={{ $json.exists }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "753cf0db-0766-47dd-a60f-c59fb95521f4",
+      "name": "Workflow Exists on Prod?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        4640,
+        1680
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const targetName = $('Build File Context').first().json.workflowName;\nconst workflows = $input.all().map(i => i.json);\nconst existing = workflows.find(w => w.name === targetName);\n\nconst rawPayload = $('Build File Context').first().json.workflow;\n\nconst workflowPayload = {\n  name: rawPayload.name,\n  nodes: rawPayload.nodes,\n  connections: rawPayload.connections,\n  settings: {\n    executionOrder: rawPayload.settings?.executionOrder ?? 'v1'\n  },\n  staticData: rawPayload.staticData ?? null\n};\n\nreturn [{\n  json: {\n    prodWorkflowId: existing ? existing.id : null,\n    exists: !!existing,\n    workflowPayload\n  }\n}];"
+      },
+      "id": "486b9e71-d97f-4399-9ec2-fed4d450a141",
+      "name": "Resolve Prod Workflow ID",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        4416,
+        1680
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "filters": {},
+        "requestOptions": {}
+      },
+      "id": "c2ae9d48-e87f-4b1e-bfb6-a46727702fdd",
+      "name": "Find Workflow on Prod",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        4192,
+        1680
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "n8nApi": {
+          "id": "7U5Tj7M2a6XdEGuM",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "success",
+              "type": "boolean",
+              "value": true
+            },
+            {
+              "id": "b2",
+              "name": "environment",
+              "type": "string",
+              "value": "sandbox"
+            },
+            {
+              "id": "b3",
+              "name": "workflow_name",
+              "type": "string",
+              "value": "={{ $('Build File Context').first().json.workflowName }}"
+            },
+            {
+              "id": "b4",
+              "name": "github_path",
+              "type": "string",
+              "value": "={{ $('Build File Context').first().json.filePath }}"
+            },
+            {
+              "id": "b5",
+              "name": "message",
+              "type": "string",
+              "value": "Backed up to sandbox. No prod deploy triggered."
+            },
+            {
+              "id": "b6",
+              "name": "backed_up_at",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "514becbd-1f15-4753-87ab-be91ee403637",
+      "name": "Sandbox Backup Complete",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3856,
+        1808
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Repo Config').item.json.repoOwner }}"
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Repo Config').item.json.repoName }}"
+        },
+        "filePath": "={{ $('Build File Context').first().json.filePath }}",
+        "fileContent": "={{ $('Build File Context').first().json.workflowJson }}",
+        "commitMessage": "={{ $('Build File Context').first().json.commitMessage }}",
+        "additionalParameters": {
+          "branch": {
+            "branch": "={{ $('Build File Context').first().json.branch }}"
+          }
+        }
+      },
+      "id": "d1590c60-c569-4a16-adac-e3cd0cefcfd8",
+      "name": "Create GitHub File",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        3136,
+        1776
+      ],
+      "webhookId": "be812bd7-ecb6-4459-843a-d3268d3beebe",
+      "typeVersion": 1.1,
+      "credentials": {
+        "githubApi": {
+          "id": "ex8jUra5eqUNz1EL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### Production Deploy & Activate\nChecks the target Production server for an existing workflow, updates or creates it, and automatically activates it.",
+        "height": 544,
+        "width": 576,
+        "color": 7
+      },
+      "id": "0e5e5825-2c57-487d-9340-835ed4f9dfa0",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3488,
+        1456
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### GitHub Version Control\nCreates or updates the `[workflow-name].json` file in the correct repository folder (`/sandbox` or `/production`).",
+        "height": 544,
+        "width": 576,
+        "color": 7
+      },
+      "id": "823adfa5-1b53-426b-bfd6-0c5f359e7822",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2864,
+        1456
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Error Handling\nGlobal error catcher that intercepts any node failures and builds a structured, clean error response.",
+        "height": 416,
+        "width": 704,
+        "color": 7
+      },
+      "id": "852b3531-1f8f-42f9-875a-398dcbfb728f",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        928,
+        2048
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Production Deploy & Activate\nChecks the target Production server for an existing workflow, updates or creates it, and automatically activates it.",
+        "height": 544,
+        "width": 1408,
+        "color": 7
+      },
+      "id": "bbeae849-3536-4874-9c1c-80fa6481fa77",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4112,
+        1456
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Automated Workflow Deployment & Git Version Control\n\n### Form-Triggered Workflow Backup & Production Deployment\n\n### How it works\nThis workflow acts as a centralized CI/CD pipeline for your n8n environment, allowing you to back up or deploy workflows directly from a custom form interface:\n\n**The Deployment Pipeline**\n1. Triggered manually via a custom Form that requests the local **Workflow ID**, the desired **Environment Action** (Sandbox or Production), and a **Commit Message**.\n2. Fetches the local workflow definition and cleans the JSON payload (stripping out instance-specific metadata while keeping nodes, connections, and settings).\n3. Checks the target GitHub repository to verify if the file already exists and compares the SHA/content to prevent duplicate or empty commits.\n4. Creates or updates the `[workflow-name].json` file in the GitHub repository under the respective environment folder (`/sandbox/` or `/production/`).\n5. **If Sandboxed:** Safely ends the workflow with a success response after backing up the code.\n6. **If Promoted to Production:** Connects to the designated Production n8n environment, checks if a workflow with the same name already exists, and either creates or updates it.\n7. Automatically activates the promoted workflow on the Production server.\n8. A built-in Error Trigger captures any failures, formats the error details (failed node, execution ID), and builds a standardized error response.\n\n### Setup steps\n- [ ] Connect your GitHub OAuth2 or Personal Access Token credential to the GitHub and HTTP Request nodes.\n- [ ] Connect your n8n API credentials (one for the local environment to fetch workflows, and one for the target Production environment).\n- [ ] Open the **Repo Config** node and set `YOUR_GITHUB_USERNAME` for the `repoOwner` value.\n- [ ] Set `YOUR_REPO_NAME` in the **Repo Config** node.\n- [ ] Set the target `branch` in the **Repo Config** node (defaults to `main`).\n- [ ] Ensure the **Find/Create/Update on Prod Server** nodes are pointing to your actual Production instance if using a multi-server setup.\n\n### Required credentials\n- **GitHub OAuth2 API** (or equivalent Personal Access Token)\n- **n8n API** (Local instance read access)\n- **n8n API** (Production instance write/deploy access)\n\n### Required GitHub API permissions\n`repo` (or fine-grained repository permissions for **Contents** Read & Write access)",
+        "height": 1008,
+        "width": 688
+      },
+      "id": "c758e53f-03b8-4558-8bd3-61c06b40399d",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        176,
+        1456
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Input & Payload Prep\nCaptures the user request from the form, fetches the local workflow JSON, and builds the deployment configuration.",
+        "height": 544,
+        "width": 912,
+        "color": 7
+      },
+      "id": "5a12615e-1776-4515-a26c-2b85567b91ea",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        928,
+        1456
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "###  GitHub Version Check\nFetches the existing file SHA and compares the content to prevent duplicate or empty commits to the repository.",
+        "height": 544,
+        "width": 928,
+        "color": 7
+      },
+      "id": "1a58fd70-2e24-4795-a9d4-1e6c680ed0bf",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1888,
+        1456
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "n8n": {
+      "main": [
+        [
+          {
+            "node": "n8n vs GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub": {
+      "main": [
+        [
+          {
+            "node": "Decode to json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To base": {
+      "main": [
+        [
+          {
+            "node": "Edit for Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Json file": {
+      "main": [
+        [
+          {
+            "node": "To base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To base64": {
+      "main": [
+        [
+          {
+            "node": "Edit for Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Json file1": {
+      "main": [
+        [
+          {
+            "node": "To base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Json file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - InputA": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - InputB": {
+      "main": [
+        [
+          {
+            "node": "Update workflow in n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n vs GitHub": {
+      "main": [
+        [
+          {
+            "node": "Json file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "If n8n before GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create new workflow in n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decode to json": {
+      "main": [
+        [
+          {
+            "node": "n8n vs GitHub",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit for Update": {
+      "main": [
+        [
+          {
+            "node": "Update file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit for Upload": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set GitHub Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set GitHub Details": {
+      "main": [
+        [
+          {
+            "node": "n8n",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List files from repo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If n8n before GitHub": {
+      "main": [
+        [
+          {
+            "node": "Code - InputB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - InputA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List files from repo": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DevOps Form": {
+      "main": [
+        [
+          {
+            "node": "Fetch Local Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repo Config": {
+      "main": [
+        [
+          {
+            "node": "Build File Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Changed?": {
+      "main": [
+        [
+          {
+            "node": "GitHub File Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Changes Detected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build File Context": {
+      "main": [
+        [
+          {
+            "node": "Get GitHub File SHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Content Changed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create GitHub File": {
+      "main": [
+        [
+          {
+            "node": "Is Production Deploy?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update GitHub File": {
+      "main": [
+        [
+          {
+            "node": "Is Production Deploy?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get GitHub File SHA": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub File Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update GitHub File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create GitHub File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Local Workflow": {
+      "main": [
+        [
+          {
+            "node": "Repo Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create on Prod Server": {
+      "main": [
+        [
+          {
+            "node": "Activate on Production",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Workflow on Prod": {
+      "main": [
+        [
+          {
+            "node": "Resolve Prod Workflow ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Production Deploy?": {
+      "main": [
+        [
+          {
+            "node": "Find Workflow on Prod",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sandbox Backup Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update on Prod Server": {
+      "main": [
+        [
+          {
+            "node": "Activate on Production",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activate on Production": {
+      "main": [
+        [
+          {
+            "node": "Build Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Prod Workflow ID": {
+      "main": [
+        [
+          {
+            "node": "Workflow Exists on Prod?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Exists on Prod?": {
+      "main": [
+        [
+          {
+            "node": "Update on Prod Server",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create on Prod Server",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateId": "5081",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "5e6c549b-343e-4e05-9d01-83aaa8f28901",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-14T15:17:55.295Z",
+      "createdAt": "2026-06-14T15:17:55.295Z",
+      "role": "workflow:owner",
+      "workflowId": "LNhdSdE6NV127neq",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
