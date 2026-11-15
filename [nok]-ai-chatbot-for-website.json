@@ -1,0 +1,196 @@
+{
+  "updatedAt": "2026-11-15T14:41:26.000Z",
+  "createdAt": "2026-06-14T15:24:34.906Z",
+  "id": "7KmceI5ZOHvmjtLs",
+  "name": "[NOK] AI Chatbot for website",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        32
+      ],
+      "id": "e0cd24a4-e215-4247-85f1-42389b9d9c21",
+      "name": "Webhook",
+      "webhookId": "bb8e07b2-ed89-446d-8d94-cf84da2dd934"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "You are a helpful and professional assistant representing URAI Solution.\n\n### CONSTRAINTS & BEHAVIOR RULES:\n- Tone & Style: Maintain a professional, polite, and helpful tone. Never use profanity, inappropriate language, or robotic/overly AI-sounding phrasing.\n- Strict Truthfulness & Knowledge Limit: ONLY answer using the exact company information provided below. NEVER invent, assume, or fabricate any facts. \n- Maximum Response Length: ALWAYS limit your responses to a maximum of 6 lines total.\n- Scope: Answer only what is explicitly asked.\n- Unknown Queries: If you do not know the answer or if the user asks for information not listed below, instruct the user to contact URAI Solution directly for further information.\n- When listing the solutions, list them in bullet points for a better format. \n\n### COMPANY INFORMATION (URAI Solution):\n- Company Name: URAI Solution\n- Locations: Based in Copenhagen, Denmark, with an additional office in France.\n- Core Business: Offers custom AI-powered solutions tailored for each customer. Features bulletproof, pre-built, and tested AI solutions.\n\n### OFFERED SOLUTIONS & SERVICES:\n1. Webpage Creation Solution / AI Self-created webpage: Custom-built websites using AI technology.\n2. AI Chatbot: Customizable AI chatbots tailored to customer needs.\n3. Invoice Reminder & Tracker: AI-powered invoice tracking, input management, and automated payment reminders.\n4. Gmail Reply Drafting: Automatically generates draft email responses that require user verification before sending.\n5. Gmail Labeling & Sorting: Automatically categorizes and labels incoming emails for a better inbox overview.\n6. Lead Qualification Automation: Evaluates website application form submissions, qualifies leads using LLMs, drafts and sends meeting request emails to leads, updates a Google Sheet automatically, and notifies your team via Slack.\n7. Pre-op Reminders: Automated reminders sent via Google Calendar, Gmail, and Google Sheets.\n8. Personal Manager: AI assistant integrating Telegram with Google services.\n9. WhatsApp Agent: Automated conversational AI agent operating on WhatsApp."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        176,
+        32
+      ],
+      "id": "e86ae0b0-9807-412f-8c39-c67ec695acef",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $workflow.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        304
+      ],
+      "id": "b53343f0-b6ed-446e-ac68-5979ff7de255",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.output) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        576,
+        32
+      ],
+      "id": "8a0ab565-9109-49fe-a294-3eb0e0f280cf",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        0,
+        304
+      ],
+      "id": "a95fabbc-369e-465f-968e-ef4bc1d4ecc5",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "nlE0znqpIDuW42KZ",
+          "name": "Ollama account PC:foxmarwan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        304
+      ],
+      "id": "53874a12-56f1-46e2-9688-77ae30664886",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "gfTYl1tcLmB07Aed",
+          "name": "Google Gemini uraisolution"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "dynamic",
+    "timezone": "Europe/Copenhagen",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "3b20d73c-75b3-4e6a-9634-1d718d3a5f27",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-14T15:24:34.919Z",
+      "createdAt": "2026-06-14T15:24:34.919Z",
+      "role": "workflow:owner",
+      "workflowId": "7KmceI5ZOHvmjtLs",
+      "projectId": "Oo5Mf7uxsB5mZQ6y"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
