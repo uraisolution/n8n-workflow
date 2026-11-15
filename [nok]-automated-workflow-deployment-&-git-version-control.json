@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-15T15:05:55.261Z",
+  "updatedAt": "2026-11-15T15:15:10.048Z",
   "createdAt": "2026-06-14T15:17:55.282Z",
   "id": "LNhdSdE6NV127neq",
   "name": "[NOK] Automated Workflow Deployment & Git Version Control",
@@ -149,7 +149,7 @@
           "mode": "name",
           "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
         },
-        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Upload'].json.fileName }}",
+        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}{{ $node['Edit for Upload'].json.fileName }}",
         "fileContent": "={{ $('To base64').item.json.data }}",
         "commitMessage": "=n8n_backup_sync-{{ $node['Edit for Upload'].json.commitDate }}",
         "additionalParameters": {
@@ -235,7 +235,7 @@
           "mode": "name",
           "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
         },
-        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Update'].json.fileName }}",
+        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}{{ $node['Edit for Update'].json.fileName }}",
         "fileContent": "={{ $('To base').item.json.data }}",
         "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}"
       },
@@ -335,8 +335,7 @@
     },
     {
       "parameters": {
-        "language": "python",
-        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['same']['id']\n\n# Get all decoded workflow items\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+        "jsCode": "// Get the desired workflow name/id\nconst workflowId = $('If n8n before GitHub').first().json.same.id;\n\n// Get all decoded workflow items\nconst allDecoded = $('Decode to json').all();\n\n// Filter for the matching one\nconst matched = allDecoded.filter(item => item.json.id === workflowId);\n\n// If there's a match, return it (or empty if none)\nif (matched.length > 0) {\n  return [{ json: { dataset: matched[0].json } }];\n} else {\n  return [];\n}"
       },
       "id": "09d43ee5-7a21-47cd-8bec-45ae16e8422f",
       "name": "Code - InputB",
@@ -349,8 +348,7 @@
     },
     {
       "parameters": {
-        "language": "python",
-        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['same']['id']\n\n# Get all decoded workflow items\nall_decoded = _('n8n').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+        "jsCode": "// Get the desired workflow id from the previous node\nconst workflowId = $('If n8n before GitHub').first().json.same.id;\n\n// Get all items from the 'n8n' node\nconst allDecoded = $('n8n').all();\n\n// Filter for the matching workflow item\nconst matched = allDecoded.filter(item => item.json.id === workflowId);\n\n// If there's a match, return it wrapped in the n8n structure; otherwise return empty array\nif (matched.length > 0) {\n  return [{ json: { dataset: matched[0].json } }];\n} else {\n  return [];\n}"
       },
       "id": "d3be821f-a331-4dc7-993d-6af348fb1fb2",
       "name": "Code - InputA",
@@ -1837,7 +1835,7 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "5e6c549b-343e-4e05-9d01-83aaa8f28901",
+  "versionId": "5ffe4756-ef70-449f-a508-65802cc044c5",
   "activeVersionId": null,
   "triggerCount": 0,
   "shared": [
